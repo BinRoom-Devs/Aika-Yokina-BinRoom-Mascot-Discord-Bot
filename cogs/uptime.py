@@ -32,8 +32,8 @@ class Uptime(commands.Cog):
             title="⏲️ Waktu Aktif Aika",
             color=0xD675C1 
         )
-        embed.add_field(name="Online selama", value=f"`{waktu_aktif}`", inline=True)
-        embed.add_field(name="Terakhir restart", value=f"<t:{timestamp_awal}:d> <t:{timestamp_awal}:T>", inline=True)
+        embed.add_field(name="Online selama", value=f"`{waktu_aktif}`\n<t:{timestamp_awal}:R>", inline=True)
+        embed.add_field(name="Terakhir restart", value=f"<t:{timestamp_awal}:d>\n<t:{timestamp_awal}:T>", inline=True)
 
         await ctx.send(embed=embed)
 

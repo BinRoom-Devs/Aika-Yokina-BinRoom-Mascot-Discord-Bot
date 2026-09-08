@@ -14,7 +14,7 @@ class About(commands.Cog):
             color = 0xDE82CF
         )
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/863959650448703538/1540201066455371888/bunga.png?ex=6a891785&is=6a87c605&hm=69d799fb0347fd7461acc9e4aeaaa32563dbaf31a05cc239f6ae10301e6dba47&")
-        embed.set_image(url="https://cdn.discordapp.com/attachments/863959650448703538/1540201112265687150/tumpukan_silly_aika.png?ex=6a891790&is=6a87c610&hm=023ac31af69e956f69a04a71e86c570019348445c4a5130a0e34cb5f6ca9ffd1&")
+        embed.set_image(url="https://cdn.discordapp.com/attachments/863959650448703538/1541536432685060196/latihan_affinity.png?ex=6a8f44ad&is=6a8df32d&hm=cfbc261b086028328945ec3289152628efcc8a18a229b2897f903cecdd3f757d&")
 
         embed.set_author(icon_url=str(self.bot.user.display_avatar.url), name=str(self.bot.user))
 
@@ -54,5 +54,5 @@ class About(commands.Cog):
         await ctx.send(embed=embed)
         print("[Aika] Command about dieksekusi")
 
-async def setup(bot: commands.Bot):
+async def setup(bot:commands.Bot):
     await bot.add_cog(About(bot))

@@ -1,4 +1,4 @@
-import discord
+import discord, asyncio
 from discord.ext import commands
 
 def warna_dinamis(latensi:int) -> int:
@@ -49,6 +49,35 @@ class Ping(commands.Cog):
         embed = discord.Embed(title=f"`{latensi}` ms", color=discord.Color(kode_hex))
         embed.set_author(name="📶 Latensi Aika")
         await ctx.send(embed=embed)
+
+    @commands.command(name="pingsweep", description="[TES EFEK VISUAL] Jalanin ping sampe 1000 buat liat perubahan warna embed awokawok")
+    @commands.is_owner()
+    async def pingsweep(self, ctx:commands.Context):
+        message = await ctx.send("Memulai percobaan tes warna embed...")
+        
+        # sweep perlahan
+        test_values = [0, 25, 50, 75, 100,
+                       125, 150, 175,
+                       200, 225, 250, 275,
+                       300, 325, 350, 375,
+                       400, 425, 450, 475,
+                       500, 525, 550, 575,
+                       600, 625, 650, 675,
+                       700, 725, 750, 775,
+                       800, 825, 850, 875,
+                       900, 925, 950, 975, 1000]
+        
+        for val in test_values:
+            kode_hex = warna_dinamis(val)
+            embed = discord.Embed(
+                title=f"`{val}` ms",
+                description=f"Warna saat ini: `#{kode_hex:06X}`",
+                color=discord.Color(kode_hex)
+            )
+            embed.set_author(name="📶 Tes Visual Warna Embed untuk Ping")
+            
+            await message.edit(content=None, embed=embed)
+            await asyncio.sleep(2)  # Pause to observe each color transition
 
 async def setup(bot):
     await bot.add_cog(Ping(bot))

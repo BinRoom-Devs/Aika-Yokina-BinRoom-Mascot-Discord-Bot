@@ -3,8 +3,6 @@ from typing import Optional
 from discord.ext import commands
 
 
-
-
 class EditEmbed(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

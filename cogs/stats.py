@@ -2,10 +2,26 @@ import discord, time, datetime, platform, psutil, urllib.request, json, socket, 
 from discord.ext import commands
 
 waktu_mulai = time.time()
+__version__ = "v2.0.0"
 
 # Inisialisasi pelacakan CPU proses awal
 proc = psutil.Process(os.getpid())
 proc.cpu_percent()
+
+def format_stopwatch(delta:datetime.timedelta) -> str:
+    """Mengubah timedelta menjadi format waktu berjenis stopwatch."""
+    hari = delta.days
+    jam, remainder = divmod(delta.seconds, 3600)
+    menit, detik = divmod(remainder, 60)
+
+    if hari > 0:
+        return f"{hari}:{jam:02d}:{menit:02d}:{detik:02d}"
+    elif jam >= 10:
+        return f"{jam:02d}:{menit:02d}:{detik:02d}"
+    elif jam > 0:
+        return f"{jam}:{menit:02d}:{detik:02d}"
+    else:
+        return f"{menit:02d}:{detik:02d}"
 
 def get_container_ram_limit() -> float:
     """Mengecek batasan RAM dari cgroups (Docker/LXC) dalam MB."""
@@ -54,7 +70,7 @@ def get_container_disk_limits() -> tuple[float, float]:
     free_mb = max(0.0, total_mb - bot_used_mb)
     return total_mb, free_mb
 
-def get_bot_directory_size_mb(path: str = ".") -> float:
+def get_bot_directory_size_mb(path:str=".") -> float:
     """Menghitung total ukuran berkas bot di direktori aktif."""
     total_size = 0
     try:
@@ -98,11 +114,11 @@ def get_hosting_provider() -> str:
         pass
     return "lokal/self-hosted"
 
-def make_bar(persen: float, panjang: int = 11) -> str:
+def make_bar(persen:float, panjang:int=11) -> str:
     terisi = int(round(panjang * max(0.0, min(persen, 100.0)) / 100))
     return "█" * terisi + "░" * (panjang - terisi)
 
-def format_size(mb_value: float) -> str:
+def format_size(mb_value:float) -> str:
     if mb_value >= 1024:
         return f"{mb_value / 1024:.1f} GB"
     return f"{int(mb_value)} MB"
@@ -119,14 +135,13 @@ class LinksView(discord.ui.View):
             self.add_item(discord.ui.Button(label="Info hosting", url="https://heavencloud.in/"))
         elif "Wispbyte" in link_info_hosting:
             self.add_item(discord.ui.Button(label="Info hosting", url="https://wispbyte.com/"))
-        
 
 class Stats(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot:commands.Bot):
         self.bot = bot
 
     @commands.hybrid_command(name="stats", description="Liat statistik tentang bot ini.")
-    async def stats(self, ctx: commands.Context):
+    async def stats(self, ctx:commands.Context):
         await ctx.defer()
         
         embed = discord.Embed(title="Informasi sistem Aika", color=0xD675C1)
@@ -144,7 +159,8 @@ class Stats(commands.Cog):
         embed.add_field(name="Dibuat", value=discord.utils.format_dt(self.bot.user.created_at, style="d"), inline=True)
 
         # Row 2: Runtime
-        waktu_aktif = str(datetime.timedelta(seconds=int(round(time.time() - waktu_mulai))))
+        delta = datetime.timedelta(seconds=int(round(time.time() - waktu_mulai)))
+        waktu_aktif = format_stopwatch(delta)
         embed.add_field(name="ID Bot", value=str(self.bot.user.id), inline=True)
         embed.add_field(name="Waktu Aktif", value=waktu_aktif, inline=True)
         embed.add_field(name="Ping", value=f"{round(self.bot.latency * 1000)}ms", inline=True)
@@ -156,7 +172,7 @@ class Stats(commands.Cog):
 
         # --- ISOLATED CONTAINER METRICS ---
         process = psutil.Process(os.getpid())
-        
+
         # 1. CPU Usage
         cpu_cores = psutil.cpu_count(logical=True) or 1
         raw_cpu = process.cpu_percent(interval=None)
@@ -190,7 +206,7 @@ class Stats(commands.Cog):
             f"Disk: {disk_str:<15} [{make_bar(bot_disk_pct)}] {format_size(disk_total_mb)}\n"
             "```"
         )
-        embed.add_field(name="Penggunaan Bot", value=sys_info, inline=False)
+        embed.add_field(name="Alokasi Sistem", value=sys_info, inline=False)
 
         # Field CPU
         try:
@@ -248,7 +264,7 @@ class Stats(commands.Cog):
         )
 
         nama_hostingan = get_hosting_provider()
-        embed.set_footer(text=f"Aika di-hosting di: {nama_hostingan}", icon_url="https://cdn.discordapp.com/attachments/863959650448703538/1540201066455371888/bunga.png?ex=6a8b11c5&is=6a89c045&hm=2f7837e9e91cf914975584cb8ba5f001f80ea54d36c86e643547b1f23a111b26&")
+        embed.set_footer(text=f"Versi Aika: {__version__} | Layanan hosting: {nama_hostingan}", icon_url="https://cdn.discordapp.com/attachments/863959650448703538/1540201066455371888/bunga.png?ex=6a8b11c5&is=6a89c045&hm=2f7837e9e91cf914975584cb8ba5f001f80ea54d36c86e643547b1f23a111b26&")
 
         is_admin = getattr(ctx.author.guild_permissions, "administrator", False) if ctx.guild else False
         

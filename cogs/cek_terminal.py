@@ -10,7 +10,7 @@ class PengalirLog(io.TextIOBase): #ngalirin output terminal ke terminal asli sek
     def __init__(self, stream_asli):
         self.stream_asli = stream_asli
 
-    def write(self, buf: str) -> int:
+    def write(self, buf:str) -> int:
         self.stream_asli.write(buf)
         for baris in buf.splitlines():
             if baris.strip():
@@ -55,13 +55,10 @@ class LogTerminal(commands.Cog): #module khusus dev buat ngeliat log terminal la
 
         for baris in teks_mentah.splitlines():
             #cek kalo barisnya ada indikasi eror
-            is_baris_eror = any(
-                kw_eror in baris.lower() 
-                for kw_eror in ["eror", "error", "gagal", "exception", "traceback"]
-            ) or baris.strip().startswith("[Groq]")
+            is_baris_eror = any(kw_eror in baris.lower() for kw_eror in ["eror", "error", "gagal", "exception", "traceback"]) or baris.strip().startswith("[Groq]")
 
-            # format tag khusus [Aika] dan [Groq]
-            # merah klo baris eror, pink kalau normal
+            #format tag khusus [Aika] dan [Groq]
+            #merah klo baris eror, pink kalau normal
             if "[Aika]" in baris:
                 warna_tag = self.ANSI["merah_tebal"] if is_baris_eror else self.ANSI["pink_tebal"]
                 baris = baris.replace("[Aika]", f"{warna_tag}[Aika]{self.ANSI['reset']}")
@@ -69,23 +66,11 @@ class LogTerminal(commands.Cog): #module khusus dev buat ngeliat log terminal la
             if "[Groq]" in baris:
                 baris = baris.replace("[Groq]", f"{self.ANSI['merah_tebal']}[Groq]{self.ANSI['reset']}")
 
-            # format path file traceback
+            #format path file traceback
             if baris.strip().startswith("File "):
-                baris = re.sub(
-                    r'File "(.*?)"',
-                    f'File "{self.ANSI["sian"]}\\1{self.ANSI["reset"]}"',
-                    baris
-                )
-                baris = re.sub(
-                    r'line (\d+)',
-                    f'line {self.ANSI["kuning"]}\\1{self.ANSI["reset"]}',
-                    baris
-                )
-                baris = re.sub(
-                    r'in ([\w<>]+\b)',
-                    f'in {self.ANSI["pink_tebal"]}\\1{self.ANSI["reset"]}',
-                    baris
-                )
+                baris = re.sub(r'File "(.*?)"', f'File "{self.ANSI["sian"]}\\1{self.ANSI["reset"]}"', baris)
+                baris = re.sub(r'line (\d+)', f'line {self.ANSI["kuning"]}\\1{self.ANSI["reset"]}', baris)
+                baris = re.sub(r'in ([\w<>]+\b)', f'in {self.ANSI["pink_tebal"]}\\1{self.ANSI["reset"]}', baris)
 
             # format marker shell / venv
             elif any(marker in baris for marker in ("PS ", "(.venv)", "venv", "$")):
@@ -106,16 +91,16 @@ class LogTerminal(commands.Cog): #module khusus dev buat ngeliat log terminal la
 
         return "\n".join(baris_terformat)
 
-    @commands.hybrid_command(name="cek_terminal", description="Ngeliat terminal log (HANYA DEV)")
+    @commands.hybrid_command(name="terminal", description="Ngeliat terminal log (HANYA DEV)", aliases=['console'])
     @commands.is_owner()
     @app_commands.default_permissions(administrator=True)
     @app_commands.describe(jumlah_baris="Jumlah baris log yang mau diambil dari memori (default: 8, max: 50)")
-    async def cek_terminal(self, ctx: commands.Context, jumlah_baris: Optional[int] = None):
+    async def terminal(self, ctx:commands.Context, jumlah_baris:Optional[int]=None):
         if jumlah_baris is not None:
-            judul_embed = f"Terminal Aika ({jumlah_baris} baris)"
+            judul_embed = f"Isi terminal Aika ({jumlah_baris} baris)"
             baris_diambil = jumlah_baris
         else:
-            judul_embed = "Terminal Aika"
+            judul_embed = "Isi terminal Aika"
             baris_diambil = 8 
 
         total_baris = max(1, min(baris_diambil, 50)) #pembatas smpe 50
@@ -137,20 +122,20 @@ class LogTerminal(commands.Cog): #module khusus dev buat ngeliat log terminal la
         if len(log_terformat) > 3900: 
             log_terformat = log_terformat[-3900:] 
             if "\x1b" in log_terformat[:8] and "[" not in log_terformat[:8]: 
-                log_terformat = log_terformat[log_terformat.find("m") + 1:] 
+                log_terformat = log_terformat[log_terformat.find("m")+1:] 
 
         embed = discord.Embed(
-            title=judul_embed,
-            description=f"```ansi\n{log_terformat}\n```", #[cite: 4]
-            color=warna_embed 
+            title = judul_embed,
+            description = f"||```ansi\n{log_terformat}\n```||",
+            color= warna_embed 
         )
 
         await ctx.send(embed=embed, ephemeral=True)
 
-    @cek_terminal.error
-    async def error_cek_terminal(self, ctx: commands.Context, error: Exception):
+    @terminal.error
+    async def error_cek_terminal(self, ctx:commands.Context, error:Exception):
         if isinstance(error, commands.NotOwner):
             await ctx.send("❌ Gaboleh, cuma owner yang boleh pake ini command.", ephemeral=True)
 
-async def setup(bot: commands.Bot):
+async def setup(bot:commands.Bot):
     await bot.add_cog(LogTerminal(bot))

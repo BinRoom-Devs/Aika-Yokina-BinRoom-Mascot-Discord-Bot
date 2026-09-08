@@ -5,7 +5,7 @@ class EditInfoRole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="edit_inforole", description="Ngedit chat info rle ke channel info-server")
+    @commands.hybrid_command(name="edit_inforole", description="Ngedit chat info role ke channel info-server")
     @commands.has_permissions(administrator=True)
     async def edit_inforole(self, ctx:commands.Context):
         message_id = 1539807532963471392
