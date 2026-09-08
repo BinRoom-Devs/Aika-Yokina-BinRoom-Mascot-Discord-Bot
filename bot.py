@@ -2,11 +2,13 @@
 import discord, database, os, asyncio, dashboard.ui.state as state
 from discord.ext import commands, tasks
 from nicegui import app, ui
+from dotenv import load_dotenv()
 from dashboard.ui.dashboard import setup_dashboard
 from dashboard.ui.views.card import init_card_view
 from dashboard.auth import setup_auth
 
 database.init_db()
+load_dotenv()
 
 OWNER_ID = 1524951093560213638  # @arumugi_4405
 TOKEN = os.getenv("TOKEN_BOT")
