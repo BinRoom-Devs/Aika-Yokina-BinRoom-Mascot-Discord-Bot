@@ -1,5 +1,7 @@
 discord.py
-groq
 python-dotenv
+groq
 nicegui
 aiohttp
+pillow
+psutil
