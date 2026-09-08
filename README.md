@@ -1,8 +1,41 @@
 
 # Aika Yokina, BinRoom Mascot Discord Bot
 
-<div align="center"> <img src="https://cdn.discordapp.com/attachments/863959650448703538/1541536432685060196/latihan_affinity.png?ex=6a8df32d&is=6a8ca1ad&hm=72006f4ad607a0b51855ae4a1c05f5d776b10dc158d44e55fc1a3c7c3e9e62b0&" width="80%" /> <p><i><small>Digambar dan didesain oleh Bindai Tsumugi; gambar dikomisi oleh Aioi</small></i></p>
+---
+<div align="center">
+	<img src="media/latihan_affinity.png" width="85%"/>
+	<p><i><small>Digambar dan didesain oleh Bindai Tsumugi; gambar dikomisi oleh Aioi</small></i></p>
 </div>
+
+<table border="0" cellspacing="0" cellpadding="0" align="center" width="700px" style="border:none !important; border-collapse:collapse; margin:0 auto;">
+  	<tr style="border:none !important;">
+    	<td align="center" valign="middle" style="border:none !important; padding:5px;">
+      		<img src="https://discord.com/api/guilds/904972136328888340/widget.png?style=banner3" alt="Discord Server Widget"/>
+    	</td>
+    	<td rowspan="2" align="center" valign="middle" style="border:none !important; padding=5px 0px 0px 0px;">
+      		<img src="http://localhost:8080/api/card.svg" height="350" width="380px" style="object-fit:contain; border:none;" alt="Bot Status Card"/>
+    	</td>
+  	</tr>
+  	<tr style="border:none !important;">
+    	<td align="center" valign="middle" style="border:none !important; padding:5px;">
+      		<img src="https://lanyard.cnrad.dev/api/1524951093560213638?bg=48708c&theme=dark&animatedDecoration=true&hideActivity=whenNotUsed" width="350" alt="Profil Developer"/>
+    	</td>
+  	</tr>
+</table>
+
+
+<p align="center" style="margin-top:20px">
+	<small>
+		Kunjungi kami: 
+		<a href="https://binroom.carrd.co/">
+			<img src="https://img.shields.io/badge/Portfolio-Carrd-ff6b6b?logo=carrd&logoColor=pink" style="vertical-align: middle;" />
+		</a>
+		  |  Lisensi:
+		<a>
+			<img src="https://img.shields.io/badge/License-MIT-blue.svg" style="vertical-align: middle;" />
+		</a>
+	</small>
+</p>
 
 ### Ringkasan
 Repositori ini berisi source code, alias isi kodingan dari bot ini. 
@@ -20,19 +53,39 @@ Berkat fitur Qwen 3.6 27B, Aika bisa merespons pesan teks dan gambar. Jika user 
 #### Command pada roleplay yang bisa digunakan (support prefiks `ak!` dan slash `/`):
 - `memory_status`: mengecek kapasitas memori Aika (ingatannya) tentangmu. 
 Dikarenakan keterbatasan varian gratisan dari Groq, Aika dibatasi hanya bisa menyimpan 24 pesan per orang. Jika kapasitas penuh, chat paling lama akan otomatis dihapus saat ada chat baru masuk.
-
 <div align="center" style="margin-left: 30px;">
-	<img src="https://cdn.discordapp.com/attachments/863959650448703538/1541539309918748774/image.png?ex=6a8df5db&is=6a8ca45b&hm=aa09ee74f0d2c27faa6850d01b8b75fe331f58a16cbd1827e664d279fe38cc11&" width="50%" />
+	<img src="media/memory_status.png" width="50%"/>
 </div>
 
 - `reset_memori`: menghapus seluruh riwayat percakapan dengan Aika
 <div align="center" style="margin-left: 30px;">
-	<img src="https://cdn.discordapp.com/attachments/863959650448703538/1541540432499048609/image.png?ex=6a8df6e7&is=6a8ca567&hm=2e964f315e98044cbaf532c76241a05f8e91af558ec970c1b8de8c1a692ffe45&" width="50%" />
+	<img src="media/reset_memory_conf.png" width="50%"/>
 </div>
 
 ---
 ### Info umum tentang Aika
-<p align="center"> <table border="0" cellspacing="0" cellpadding="0" align="center" style="border: none !important; border-collapse: collapse; margin: 0 auto;"> <tr style="border: none !important;"> <td align="center" valign="middle" style="border: none !important; padding: 0 10px;"> <img src="https://cdn.discordapp.com/attachments/1540950430014513202/1540950430173892638/1.2-_ilustrasi_asli_with_info_19_apr_2022.png?ex=6a8dcbac&is=6a8c7a2c&hm=12899b9f1f55b2aadbb749b8c99d0a138ff5c68a3b3455eecfc9b733c095a16c&" height="350" style="max-width: 100%; object-fit: contain; border: none;" /> </td> <td align="center" valign="middle" style="border: none !important; padding: 0 10px;"> <img src="https://cdn.discordapp.com/attachments/1540950430014513202/1540950430547320912/where_it_all_started.png?ex=6a8dcbac&is=6a8c7a2c&hm=36fbc41d35ad138f50a8de970fdadced8417af652fa68588fc931ce0abb6e2fc&" height="350" style="max-width: 100%; object-fit: contain; border: none;" /> </td> </tr> </table> </p> <p align="center"><i>Kiri: ilustrasi awal Aika Yokina beserta chat para member kontributor<br>Kanan: chat owner saat menginisiasi tantangan</i></p>
+
+<p align="center">
+	<table border="0" cellspacing="0" cellpadding="0" align="center" style="border:none !important; border-collapse:collapse; margin:0 auto;">
+		<tr style="border:none !important;">
+			<td align="center" valign="middle" style="border:none !important; padding:0 10px;">
+				<img src="media/original_aika_illust.png" height="350" style="max-width:100%; object-fit:contain; border:none;"/>
+			</td>
+			<td align="center" valign="middle" style="border:none !important; padding:0 10px;">
+				<img src="media/letsmakeanoc_challenge.png" height="350" style="max-width:100%; object-fit:contain; border:none;"/>
+			</td>
+		</tr>
+	</table>
+</p>
+
+<p align="center">
+	<small>
+		<i>Kiri: ilustrasi awal Aika Yokina beserta chat para member kontributor
+		<br>
+		Kanan: chat owner saat menginisiasi tantangan</i>
+	</small>
+</p>
+
 Aika Yokina adalah OC server yang tercipta dari hasil kreasi bersama. Pada April 2022, owner mencoba tantangan menggambar online 'Let's Make an OC Challenge.' Dari kesepuluh kategori, masing-masing diisi oleh para member. Kategorinya antara lain:
 
 1. Spesies: manusia (Yoga)
@@ -51,14 +104,68 @@ Dari sintesis inilah tercipta Aika, seorang maskot/OC yang punya esensi nyata mi
 ### Asal usul nama Aika Yokina
 Nama Aika Yokina digagas oleh Ilham/ZeoTrix dengan filosofi: Aika berarti karakter yang selalu mengiramakan cinta dan kasih sayang, Yokina berarti karakter yang selalu membawa keceriaan pada orang lain.
 
-<div align="center"> <img src="https://cdn.discordapp.com/attachments/1540950430014513202/1540950870106054727/image.png?ex=6a8dcc14&is=6a8c7a94&hm=7d36a10d7b53e71cbcc6a257d18ecad634019e2efa8059596940199eb2b4e942&" width="50%" /> <p><i>Screenshot chat filosofi nama Aika Yokina yang digagas oleh Ilham ZeoTrix</i></p> </div>
+<div align="center">
+	<img src="media/filosofi_nama_aika.png" width="60%"/>
+	<p><i>Screenshot chat filosofi nama Aika Yokina yang digagas oleh Ilham ZeoTrix</i></p>
+</div>
 
 Meski tampak bertolak belakang dengan sikap dinginnya, dia tidak berarti kejam, kok. Dari dalam, dia masih perhatian dan punya hati. 
 
 ----
 ### Info hosting
-Bot Aika di-hosting di [HeavenCloud](https://heavencloud.in/) menggunakan tier gratisan. Layanan ini dipilih karena mereka menawarkan free tier yang gratis terus-menerus dan dijamin online 24/7 dengan uptime 95-99%, cocok untuk Aika yang berjaga di channel ranjau/honeypot server.
+Bot Aika di-hosting di [Wispbyte](https://wispbyte.com/) menggunakan tier gratisan. Layanan ini dipilih karena mereka menawarkan free tier yang gratis terus-menerus dan dijamin online 24/7 dengan uptime 95-99%, cocok untuk Aika yang berjaga di channel ranjau/honeypot server.
 
 ---
 
-<p align="center"> <small> © 2022-2026 BinRoom & Bindai Tsumugi. Hak cipta dilindungi undang-undang.<br> Gabung BinRoom: <a href="https://discord.gg/cDMxkAkMYm"><img src="https://img.shields.io/badge/Discord-Join%20Server-7289da?logo=discord&logoColor=pink" style="vertical-align: middle;" /></a> · Kunjungi kami: <a href="https://binroom.carrd.co/"><img src="https://img.shields.io/badge/Portfolio-Carrd-ff6b6b?logo=carrd&logoColor=pink" style="vertical-align: middle;" /></a> </small> </p>
+## Mau Jalanin Bot-nya Sendiri? Berikut Instalasinya
+
+### Persyaratan
+- Python 3.10 atau lebih baru
+- Token bot Discord (salin dari [Discord Developer Portal](https://discord.com/developers/home) di menu bot-mu)
+- API key Groq (untuk fitur AI chatbot)
+- Kredensial API Sightengine (untuk moderasi konten)
+
+### Pengaturan
+
+1. **Klon repositori**
+   ```bash
+   git clone https://github.com/AbinDai/Aika-Yokina-BinRoom-Mascot-Discord-Bot.git
+   cd Aika-Yokina-BinRoom-Mascot-Discord-Bot
+   ```
+
+2. **Buat virtual environment**
+   ```bash
+   python -m venv .venv
+   # Di Windows:
+   .venv\Scripts\activate
+   # Di Unix/macOS:
+   source .venv/bin/activate
+   ```
+
+3. **Install dependensi**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Konfigurasi environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` dan isi nilai yang diperlukan:
+   - `TOKEN_BOT`: Token bot Discord Anda
+   - `GROQ_API_KEY`: API key Groq Anda
+   - `SIGHTENGINE_USER`: User ID Sightengine Anda
+   - `SIGHTENGINE_SECRET`: API secret Sightengine Anda
+   - Dan nilai konfigurasi lainnya sesuai kebutuhan
+
+5. **Jalankan bot**
+   ```bash
+   python bot.py
+   ```
+
+## Pengembangan
+
+Lihat [CONTRIBUTING.id.md](CONTRIBUTING.id.md) untuk panduan pengembangan.
+
+---
+<p align="center"><small>© 2022-2026 BinRoom & Bindai Tsumugi. Hak cipta dilindungi undang-undang.</small></p>
