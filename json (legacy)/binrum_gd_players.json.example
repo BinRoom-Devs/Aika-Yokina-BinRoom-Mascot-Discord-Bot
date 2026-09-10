@@ -1,0 +1,21 @@
+[
+  {
+    "nama_user_gd": "",
+    "account_id_gd": 0,
+    "player_id_gd": 0,
+    "id_user_discord": 0,
+    "statistik": {
+      "stars": 0,
+      "moons": 0,
+      "diamonds": 0,
+      "secret_coins": 0,
+      "user_coins": 0,
+      "demons": 0,
+      "creator_points": 0
+    },
+    "icon": 0,
+    "col1": 0,
+    "col2": 0,
+    "glow": 0
+  }
+]

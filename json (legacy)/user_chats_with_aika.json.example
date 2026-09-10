@@ -1,0 +1,12 @@
+{
+  "000000000000000000": [
+    {
+      "role": "user",
+      "content": "pesanmu"
+    },
+    {
+      "role": "assistant",
+      "content": "pesan aika"
+    }
+  ]  
+}
