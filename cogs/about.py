@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
 
+
 class About(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot:commands.Bot):
         self.bot = bot
 
     @commands.hybrid_command(name="about", description="Liat info tentang saya.")
@@ -53,6 +54,7 @@ class About(commands.Cog):
 
         await ctx.send(embed=embed)
         print("[Aika] Command about dieksekusi")
+
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(About(bot))

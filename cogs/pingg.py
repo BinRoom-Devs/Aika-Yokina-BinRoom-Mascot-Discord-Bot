@@ -1,5 +1,8 @@
-import discord, asyncio
+import asyncio
+
+import discord
 from discord.ext import commands
+
 
 def warna_dinamis(latensi:int) -> int:
     # WARNA EMBED SESUAI LATENSI, TAPI BIKIN JADI COMPLICATED: 
@@ -77,7 +80,7 @@ class Ping(commands.Cog):
             embed.set_author(name="📶 Tes Visual Warna Embed untuk Ping")
             
             await message.edit(content=None, embed=embed)
-            await asyncio.sleep(2)  # Pause to observe each color transition
+            await asyncio.sleep(2) 
 
 async def setup(bot):
     await bot.add_cog(Ping(bot))

@@ -1,5 +1,11 @@
-import discord, asyncio, os, sys, subprocess, time
+import asyncio
+import os
+import sys
+import time
+
+import discord
 from discord.ext import commands
+
 
 class TombolKonfirmasi(discord.ui.View):
     def __init__(self, author_id:int, action_name:str):
@@ -40,7 +46,7 @@ class TombolPower(commands.Cog):
                     await logger_cog.send_shutdown_log()
                 elif action == "restart" and hasattr(logger_cog, "send_restart_log"):
                     await logger_cog.send_restart_log()
-        except Exception as e:
+        except (discord.HTTPException, AttributeError) as e:
             print(f"[Aika] Error saat membaca log untuk {action}: {e}")
 
     @commands.hybrid_command(name="shutdown", aliases=["turn_off", "stop", "power_off", "log_off"])
@@ -78,7 +84,7 @@ class TombolPower(commands.Cog):
         
         try:
             await self.bot.change_presence(status=discord.Status.invisible)
-        except Exception as e:
+        except discord.HTTPException as e:
             print(f"[Aika] Gagal mengubah status menjadi offline: {e}")
         
         try:
@@ -89,7 +95,7 @@ class TombolPower(commands.Cog):
         
         try:
             await self.bot.close()
-        except Exception as e:
+        except discord.HTTPException as e:
             print(f"[Aika] Gagal menutup bot: {e}")
         finally:
             os._exit(0)
@@ -129,14 +135,14 @@ class TombolPower(commands.Cog):
         
         try:
             await self.bot.close()
-        except Exception as e:
+        except discord.HTTPException as e:
             print(f"[Aika] Gagal menutup bot untuk restart: {e}")
         
         restart_args = sys.argv.copy() + ["--restart-msg", str(ctx.channel.id), str(msg.id)]
         
         try:
-            subprocess.Popen([sys.executable] + restart_args)
-        except Exception as e:
+            await asyncio.create_subprocess_exec(sys.executable, *restart_args)
+        except OSError as e:
             print(f"[Aika] Gagal menitip subprocess untuk restart: {e}")
         finally:
             os._exit(0)
@@ -170,7 +176,7 @@ class TombolPower(commands.Cog):
                         print(f"[Aika] Tidak memiliki izin untuk mengedit pesan dengan ID {message_id} di channel {channel_id}.")
             except (ValueError, IndexError) as e:
                 print(f"[Aika] Kesalahan saat memproses argumen restart: {e}")
-            except Exception as e:
+            except discord.HTTPException as e:
                 print(f"[Aika] Error saat mengedit pesan untuk restart: {e}")
 
     async def command_cog_error(self, ctx:commands.Context, error:Exception):

@@ -1,5 +1,9 @@
-import discord, io, asyncio, aiohttp
+import asyncio
+import io
 from functools import lru_cache
+
+import aiohttp
+import discord
 from discord.ext import commands
 from PIL import Image
 
@@ -52,7 +56,7 @@ class LihatProfil(discord.ui.LayoutView):
 
         try:
             link_hd = asset.with_size(4096).url
-        except Exception:
+        except (discord.InvalidArgument, AttributeError):
             link_hd = asset.url
         warna, lebar_hd, tinggi_hd, beranimasi, total_frame = await self.cog.proses_aset_cached(link_hd)
 
@@ -141,7 +145,7 @@ class LihatProfil(discord.ui.LayoutView):
                 container = await self.buat_container(tombol_mati=True)
                 self.add_item(container)
                 await self.message.edit(view=self)
-        except Exception:
+        except discord.HTTPException:
             pass
 
 
@@ -179,7 +183,7 @@ class PFP(commands.Cog):
                     warna = (r<<16) + (g<<8) + b
 
                 return warna, lebar, tinggi, beranimasi, total_frame
-        except Exception:
+        except (Image.UnidentifiedImageError, OSError, ValueError):
             pass
         return 0xD675C1, 0, 0, False, 1
     
@@ -190,7 +194,7 @@ class PFP(commands.Cog):
                     return 0xD675C1, 0, 0, False, 1
                 byte_gambar = await respon.read()
             return await asyncio.to_thread(self._proses_gambar_blocking, byte_gambar)
-        except Exception as e:
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
             print(f"[Aika] Foto profil: gagal memproses gambar ({e})")
             return 0xD675C1, 0, 0, False, 1
     
@@ -206,7 +210,7 @@ class PFP(commands.Cog):
         if getattr(user_obj, "banner", None) is None:
             try:
                 user_obj = await self.bot.fetch_user(target_obj.id)
-            except Exception:
+            except discord.HTTPException:
                 pass
 
         return user_obj, member_obj
@@ -262,7 +266,7 @@ class PFP(commands.Cog):
 
         try:
             await ctx.send(view=view)
-        except Exception:
+        except discord.HTTPException:
             await ctx.send(f"**{judul}**\n{pesan}")
 
 

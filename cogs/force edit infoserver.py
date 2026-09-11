@@ -1,16 +1,14 @@
 import discord
 from discord.ext import commands
 
+
 class ForceEditEmbed(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.hybrid_command(name="paksa_edit-embed-di-infoserver", description="Ngedit isi embed di info server (jangan lupa kasih ID pesannya)")
     @commands.has_permissions(administrator=True)
-    async def forceeditembed(
-        self, ctx:commands.Context,
-        message_id: str
-    ):
+    async def forceeditembed(self, ctx:commands.Context, message_id:str):
         await ctx.defer(ephemeral=False)
 
         channel = self.bot.get_channel(904972338687270992)
@@ -42,6 +40,7 @@ class ForceEditEmbed(commands.Cog):
             await ctx.send("❌ Pesannya gaada.")
         except discord.HTTPException as e:
             await ctx.send(f"❌ Gagal ngedit pesan: {e}")
+
 
 async def setup(bot):
     await bot.add_cog(ForceEditEmbed(bot))

@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 
+
 class EditInfoRole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -55,7 +56,6 @@ class EditInfoRole(commands.Cog):
         
         embed.set_footer(text="Selengkapnya di channel [# 📛・ambil-role].")
 
-        
         if channel is None:
             await ctx.send("❌ I couldn't find the target channel.")
             return
@@ -63,6 +63,7 @@ class EditInfoRole(commands.Cog):
         await target_message.edit(embed=embed)
 
         await ctx.send(f"✅ Pesan info role sukses terkirim di channel {channel.mention}.")
+
 
 async def setup(bot):
     await bot.add_cog(EditInfoRole(bot))

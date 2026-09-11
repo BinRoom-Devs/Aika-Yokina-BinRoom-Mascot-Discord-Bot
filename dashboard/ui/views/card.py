@@ -1,22 +1,23 @@
 import base64
 import html
 import os
+
 import aiohttp
 from fastapi import Response
 from nicegui import app
+
 
 async def fetch_image_as_base64(url: str) -> str:
     if not url:
         return ""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=5) as resp:
-                if resp.status == 200:
-                    content_type = resp.headers.get("Content-Type", "image/png")
-                    data = await resp.read()
-                    encoded = base64.b64encode(data).decode("utf-8")
-                    return f"data:{content_type};base64,{encoded}"
-    except Exception:
+        async with aiohttp.ClientSession() as session, session.get(url, timeout=5) as resp:
+            if resp.status == 200:
+                content_type = resp.headers.get("Content-Type", "image/png")
+                data = await resp.read()
+                encoded = base64.b64encode(data).decode("utf-8")
+                return f"data:{content_type};base64,{encoded}"
+    except (aiohttp.ClientError, TimeoutError):
         pass
     return ""
 
@@ -26,7 +27,7 @@ def get_local_image_base64(file_path: str, mime_type: str = "image/png") -> str:
             with open(file_path, "rb") as image_file:
                 encoded = base64.b64encode(image_file.read()).decode("utf-8")
                 return f"data:{mime_type};base64,{encoded}"
-        except Exception:
+        except OSError:
             pass
     return ""
 

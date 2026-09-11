@@ -1,9 +1,13 @@
-import discord, sys, io, re, collections
+import collections
+import io
+import re
+import sys
+
+import discord
 from discord import app_commands
 from discord.ext import commands
-from typing import Optional
 
-# ring buffer global buat nampung output stdout dan stderr di memori
+#ring buffer global buat nampung output stdout dan stderr di memori
 TAMPUNGAN_LOG = collections.deque(maxlen=100)
 
 class PengalirLog(io.TextIOBase): #ngalirin output terminal ke terminal asli sekaligus ke buffer memori
@@ -95,7 +99,7 @@ class LogTerminal(commands.Cog): #module khusus dev buat ngeliat log terminal la
     @commands.is_owner()
     @app_commands.default_permissions(administrator=True)
     @app_commands.describe(jumlah_baris="Jumlah baris log yang mau diambil dari memori (default: 8, max: 50)")
-    async def terminal(self, ctx:commands.Context, jumlah_baris:Optional[int]=None):
+    async def terminal(self, ctx:commands.Context, jumlah_baris:int|None=None):
         if jumlah_baris is not None:
             judul_embed = f"Isi terminal Aika ({jumlah_baris} baris)"
             baris_diambil = jumlah_baris

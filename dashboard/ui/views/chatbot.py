@@ -1,11 +1,12 @@
-import os
-import json
 import discord
-import database
 from nicegui import ui
 from nicegui.context import context
+
+import database
+
 from .. import state
 from ..utils import notify_for_client
+
 
 def render_chatbot_tab(bot: discord.Client):
     # Header section with title and quick link buttons
@@ -20,7 +21,7 @@ def render_chatbot_tab(bot: discord.Client):
             )
 
     ai_cog = bot.get_cog("AIPersona")
-    stats_cog = bot.get_cog("AIChatbotStats")
+    #stats_cog = bot.get_cog("AIChatbotStats")
 
     if not ai_cog:
         with ui.card().classes("w-full bg-rose-950/40 border border-rose-500/20 rounded-2xl p-6 text-rose-300"):
@@ -120,7 +121,7 @@ def render_chatbot_tab(bot: discord.Client):
                 if not discord_user:
                     try:
                         discord_user = await bot.fetch_user(uid)
-                    except Exception:
+                    except discord.DiscordException:
                         discord_user = None
 
                 profile_data = {
@@ -136,7 +137,7 @@ def render_chatbot_tab(bot: discord.Client):
                 max_cap = ai_cog.max_memory_messages
 
                 if not selected_stats_user["uid"] and ai_cog.user_chats:
-                    selected_stats_user["uid"] = list(ai_cog.user_chats.keys())[0]
+                    selected_stats_user["uid"] = next(iter(ai_cog.user_chats.keys()))
 
                 with details_container:
                     if not ai_cog.user_chats:
@@ -314,7 +315,7 @@ def render_chatbot_tab(bot: discord.Client):
 
         try:
             current_lore = database.get_lore()
-        except Exception as e:
+        except (database.DatabaseError, AttributeError, OSError) as e:
             state.log_event(f"[Dashboard] Gagal membaca lore SQLite: {e}")
             current_lore = {}
 
@@ -373,7 +374,7 @@ def render_chatbot_tab(bot: discord.Client):
                 
                 state.log_event("[Dashboard] Lore Aika berhasil diperbarui di SQLite.")
                 ui.notify("Lore Aika berhasil disimpan dan diperbarui!", type="positive", color="pink")
-            except Exception as e:
+            except (database.DatabaseError, AttributeError, OSError) as e:
                 state.log_event(f"[Dashboard] Gagal menyimpan lore SQLite: {e}")
                 ui.notify("Gagal menyimpan lore ke database.", type="negative")
 

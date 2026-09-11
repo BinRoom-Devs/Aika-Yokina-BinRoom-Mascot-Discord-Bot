@@ -1,6 +1,9 @@
-import discord, time, re
+import re
+import time
+from datetime import datetime, timedelta, timezone
+
+import discord
 from discord.ext import commands
-from datetime import datetime, timezone, timedelta
 
 wib_tz = timezone(timedelta(hours=7))
 
@@ -59,7 +62,7 @@ class AIChatbotStats(commands.Cog):
                 return "\u001b[30m░"*panjang+"\u001b[0m"
             
             progress = min(max(jumlah/total, 0.0), 1.0)
-            terisi = int(round(panjang*progress))
+            terisi = round(panjang*progress)
             
             MERAH = "\u001b[31m"
             KUNING = "\u001b[33m"
@@ -93,7 +96,7 @@ class AIChatbotStats(commands.Cog):
                 await ctx.send("❌ Error: Cog AIPersona belum dimuat.")
             return
 
-        # ambil data metadata & session dari AIPersona
+        #ambil data metadata & session dari AIPersona
         meta = getattr(ai_cog, "last_api_meta", {})
         session = getattr(ai_cog, "session_usage", {
             "total_requests": 0,
@@ -201,7 +204,7 @@ class AIChatbotStats(commands.Cog):
             embed.add_field(name="Kuota real-time Groq", value="*Menunggu header respon pertama dari API...*", inline=True)
 
         view = StatsButtonsView()
-        print(f"[Aika] Membalas embed statistik")
+        print("[Aika] Membalas embed statistik")
         if ctx.interaction:
             await ctx.interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         else:

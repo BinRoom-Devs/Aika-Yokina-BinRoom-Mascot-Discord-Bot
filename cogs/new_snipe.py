@@ -1,9 +1,12 @@
-import discord, asyncio, aiohttp, io, re
-from discord.ext import commands, tasks
+import asyncio
+import io
+import re
 from collections import deque
-from functools import lru_cache
-from PIL import Image
 
+import aiohttp
+import discord
+from discord.ext import commands, tasks
+from PIL import Image
 
 BATAS_UKURAN_ATTACHMENT = 8 * 1024 * 1024   
 BATAS_UKURAN_BYTE = 15 * 1024 * 1024     
@@ -41,7 +44,7 @@ def _proses_gambar_warnadominan(byte_gambar:bytes) -> int:
             if palette:
                 r, g, b = palette[:3]
                 return (r<<16) + (g<<8) + b
-    except Exception:
+    except (Image.UnidentifiedImageError, OSError, ValueError):
         pass
     return 0xD675C1
 
@@ -51,7 +54,7 @@ async def cari_warna_dominan(session:aiohttp.ClientSession, url:str) -> int:
             if resp.status == 200:
                 data = await resp.read()
                 return await asyncio.to_thread(_proses_gambar_warnadominan, data)
-    except Exception:
+    except (aiohttp.ClientError, asyncio.TimeoutError):
         pass
     return 0xD675C1
 
@@ -77,9 +80,8 @@ def format_jumboji(text: str) -> str:
 
     total_emoji_count = len(emoji_kustom) + len(unicode_emojis)
 
-    if is_emoji_only and 1 <= total_emoji_count <= 30:
-        if not stripped.startswith('# '):
-            return f'# {stripped}'
+    if is_emoji_only and 1 <= total_emoji_count <= 30 and not stripped.startswith('# '):
+        return f'# {stripped}'
 
     return text
 
@@ -92,7 +94,7 @@ async def check_valid_cdn_url(session:aiohttp.ClientSession, url:str) -> bool:
             is_valid = resp.status == 200
             CACHE_VALIDASI_CDN[url] = is_valid
             return is_valid
-    except Exception:
+    except (aiohttp.ClientError, asyncio.TimeoutError):
         CACHE_VALIDASI_CDN[url] = False
         return False
 
@@ -280,7 +282,7 @@ class SnipeView(discord.ui.LayoutView):
         try:
             if self.message:
                 await self.message.edit(view=self, allowed_mentions=discord.AllowedMentions.none())
-        except Exception:
+        except discord.HTTPException:
             pass
 
 

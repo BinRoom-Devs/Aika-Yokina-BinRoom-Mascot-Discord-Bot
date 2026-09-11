@@ -1,23 +1,28 @@
-import discord, asyncio, aiohttp
+import asyncio
+
+import aiohttp
+import discord
 from nicegui import ui
 from nicegui.context import context
+
 from ..utils import notify_for_client
+
 
 def render_leaderboard_tab(bot: discord.Client):
     try:
         from cogs.gd_leaderboard import (
             GDPlayer,
-            prepare_gd_leaderboard_rows,
-            normalize_gd_category_name,
-            load_daftar_player,
-            simpan_daftar_player,
             cari_profil_gd,
+            load_daftar_player,
+            normalize_gd_category_name,
+            prepare_gd_leaderboard_rows,
+            simpan_daftar_player,
         )
-    except Exception as exc:
+    except ImportError as exc:
         ui.label("Leaderboard GD").classes("text-3xl font-extrabold text-white tracking-tight")
         with ui.card().classes("w-full bg-[#18181b] border border-white/5 rounded-2xl p-6 text-rose-300"):
             ui.label(f"Gagal memuat leaderboard GD: {exc}").classes("text-sm")
-        return None
+        return
 
     leaderboard_cog = bot.get_cog("BinrumLeaderboard")
 
@@ -72,7 +77,7 @@ def render_leaderboard_tab(bot: discord.Client):
         try:
             user = await asyncio.wait_for(bot.fetch_user(user_id), timeout=4)
             avatar_url = user.display_avatar.url if user.display_avatar else "https://cdn.discordapp.com/embed/avatars/0.png"
-        except Exception:
+        except (discord.DiscordException, asyncio.TimeoutError):
             avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
 
         avatar_url_cache[user_id] = avatar_url
@@ -134,16 +139,16 @@ def render_leaderboard_tab(bot: discord.Client):
                 account_id, player_id, real_name = result
                 profile_data = {}
                 try:
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(
-                            f"https://gdbrowser.com/api/profile/{account_id}",
-                            ssl=False,
-                            timeout=aiohttp.ClientTimeout(total=8),
-                        ) as response:
-                            if response.status == 200:
-                                data = await response.json()
-                                if isinstance(data, dict):
-                                    profile_data = data
+                    timeout = aiohttp.ClientTimeout(total=8)
+                    async with aiohttp.ClientSession() as session, session.get(
+                        f"https://gdbrowser.com/api/profile/{account_id}",
+                        ssl=False,
+                        timeout=timeout,
+                    ) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if isinstance(data, dict):
+                                profile_data = data
                 except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
                     profile_data = {}
 
@@ -161,13 +166,12 @@ def render_leaderboard_tab(bot: discord.Client):
                 preview_player = GDPlayer(preview_data)
                 icon_url = preview_player.get_icon_url()
                 preview_container.clear()
-                with preview_container:
-                    with ui.row().classes("w-full items-center gap-4 no-wrap"):
-                        ui.image(icon_url).classes("w-20 h-20 object-contain shrink-0 rounded-xl border border-white/10 bg-[#0d0d0e] p-1")
-                        with ui.column().classes("min-w-0 gap-1"):
-                            ui.label(real_name).classes("text-xl font-bold text-white truncate")
-                            ui.label(f"Account ID: {account_id}").classes("text-xs text-gray-400 font-mono")
-                            ui.label(f"Player ID: {player_id}").classes("text-xs text-gray-400 font-mono")
+                with preview_container, ui.row().classes("w-full items-center gap-4 no-wrap"):
+                    ui.image(icon_url).classes("w-20 h-20 object-contain shrink-0 rounded-xl border border-white/10 bg-[#0d0d0e] p-1")
+                    with ui.column().classes("min-w-0 gap-1"):
+                        ui.label(real_name).classes("text-xl font-bold text-white truncate")
+                        ui.label(f"Account ID: {account_id}").classes("text-xs text-gray-400 font-mono")
+                        ui.label(f"Player ID: {player_id}").classes("text-xs text-gray-400 font-mono")
 
                 status_label.set_text("Akun valid. Konfirmasi untuk menambahkan ke leaderboard.")
 
@@ -232,7 +236,7 @@ def render_leaderboard_tab(bot: discord.Client):
                             f"Data diperbarui: {updated_count} berhasil, {failed_count} gagal.",
                             type="positive" if failed_count == 0 else "warning",
                         )
-                    except Exception as exc:
+                    except (discord.DiscordException, aiohttp.ClientError, asyncio.TimeoutError, OSError) as exc:
                         ui.notify(f"Gagal memperbarui data: {exc}", type="negative")
                     finally:
                         refresh_button.enable()
@@ -254,10 +258,9 @@ def render_leaderboard_tab(bot: discord.Client):
 
         async def render_leaderboard_rows():
             leaderboard_body.clear()
-            with leaderboard_body:
-                with ui.card().classes("w-full bg-[#18181b] border border-white/5 rounded-2xl p-8 gap-3 items-center text-white"):
-                    ui.spinner(size="2em", color="pink")
-                    ui.label("Memuat leaderboard...").classes("text-sm text-gray-300")
+            with leaderboard_body, ui.card().classes("w-full bg-[#18181b] border border-white/5 rounded-2xl p-8 gap-3 items-center text-white"):
+                ui.spinner(size="2em", color="pink")
+                ui.label("Memuat leaderboard...").classes("text-sm text-gray-300")
 
             category = normalize_gd_category_name(selected_category["value"] or "stars")
             rows = prepare_gd_leaderboard_rows(category)
@@ -384,4 +387,4 @@ def render_leaderboard_tab(bot: discord.Client):
         search_input.on("update:model-value", on_search_change)
         ui.timer(0.01, render_leaderboard_rows, once=True)
 
-    return None  # No real-time ticker callback needed
+    return  # No real-time ticker callback needed

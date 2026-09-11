@@ -1,11 +1,17 @@
 
-import discord, database, os, asyncio, dashboard.ui.state as state
+import asyncio
+import os
+
+import discord
 from discord.ext import commands, tasks
+from dotenv import load_dotenv
 from nicegui import app, ui
-from dotenv import load_dotenv()
+
+import database
+from dashboard.auth import setup_auth
+from dashboard.ui import state
 from dashboard.ui.dashboard import setup_dashboard
 from dashboard.ui.views.card import init_card_view
-from dashboard.auth import setup_auth
 
 database.init_db()
 load_dotenv()
@@ -65,7 +71,7 @@ async def on_ready():
     try:
         synced = await aika.tree.sync()
         state.log_event(f"[Aika] {len(synced)} slash command disinkronkan.")
-    except Exception as e:
+    except (discord.HTTPException, discord.Forbidden) as e:
         state.log_event(f"[Aika] Gagal menyinkronkan slash command: {e}")
 
 async def load_cogs():
@@ -76,7 +82,7 @@ async def load_cogs():
                 state.log_event(f"[Aika] Cog dimuat: {filename[:-3]}")
 
 async def start_bot():
-    port = int(os.getenv("PORT", 8080))
+    port = int(os.getenv("PORT"))
     print(f"\n🌐 Dashboard live at: http://localhost:{port}\n")
     await load_cogs()
     asyncio.create_task(aika.start(TOKEN))
@@ -88,7 +94,7 @@ setup_dashboard(aika)
 app.on_startup(start_bot)
 
 if __name__ in {"__main__", "__mp_main__"}:
-    port = int(os.getenv("PORT", 8080))
+    port = int(os.getenv("PORT"))
     ui.run(
         host="0.0.0.0",
         port=port,

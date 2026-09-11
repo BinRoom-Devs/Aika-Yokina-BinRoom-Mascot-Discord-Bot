@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import discord
 from discord.ext import commands
-from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 IMAGE_PATH = BASE_DIR / "assets" / "aturan.png"
@@ -22,7 +23,6 @@ class Rule(commands.Cog):
 
         channel = self.bot.get_channel(904972338687270992)
         if channel is None:
-            await ctx.send("❌ I couldn't find the target channel.")
             return
         
         await channel.send(file=ambil_gambar)

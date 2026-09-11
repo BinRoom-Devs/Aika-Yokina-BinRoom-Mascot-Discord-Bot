@@ -1,7 +1,6 @@
 discord.py
-python-dotenv
 groq
+python-dotenv
 nicegui
 aiohttp
 pillow
-psutil

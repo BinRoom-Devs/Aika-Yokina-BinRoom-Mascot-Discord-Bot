@@ -1,5 +1,5 @@
-from nicegui import app, ui
 from fastapi import Request
+from nicegui import app, ui
 
 MASCOT_URL = "media/aika_marah.png"
 LOGO_URL = "media/binroom_logo_white.png"

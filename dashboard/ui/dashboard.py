@@ -1,14 +1,15 @@
 import discord
-from nicegui import app, ui
 from fastapi import Request
+from nicegui import ui
+
+from dashboard.auth import get_user_admin_role, is_authenticated_admin
+
 from . import state
-from .views.overview import render_overview_tab
-from .views.info_server import render_info_server_tab
 from .views.chatbot import render_chatbot_tab
-from .views.leaderboard import render_leaderboard_tab
 from .views.forbidden import render_403_page
-from dashboard.auth import is_authenticated_admin, get_user_admin_role
-from dashboard.ui.views.card import init_card_view
+from .views.info_server import render_info_server_tab
+from .views.leaderboard import render_leaderboard_tab
+from .views.overview import render_overview_tab
 
 current_tab = "overview"
 current_update_func = None  # Receives callback from active view renderer
@@ -34,7 +35,6 @@ def setup_dashboard(bot: discord.Client):
         avatar_url = request.session.get("avatar_url", "https://cdn.discordapp.com/embed/avatars/0.png")
         role_name, role_color = get_user_admin_role(bot, user_id)
 
-        global current_tab, current_update_func
         ui.dark_mode().enable()
         ui.add_head_html('<link rel="stylesheet" href="/static/style.css">')
         ui.add_head_html('<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">')

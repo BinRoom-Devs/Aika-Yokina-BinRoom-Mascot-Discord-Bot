@@ -1,5 +1,8 @@
-import discord, datetime
+import datetime
+
+import discord
 from discord.ext import commands
+
 
 class Uptime(commands.Cog):
     def __init__(self, bot:commands.Bot):
@@ -36,6 +39,7 @@ class Uptime(commands.Cog):
         embed.add_field(name="Terakhir restart", value=f"<t:{timestamp_awal}:d>\n<t:{timestamp_awal}:T>", inline=True)
 
         await ctx.send(embed=embed)
+
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(Uptime(bot))

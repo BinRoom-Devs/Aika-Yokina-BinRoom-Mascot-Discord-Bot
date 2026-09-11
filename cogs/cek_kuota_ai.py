@@ -1,5 +1,9 @@
-import discord, time, re
+import re
+import time
+
+import discord
 from discord.ext import commands
+
 
 class CekKuotaAI(commands.Cog):
     def __init__(self, bot):
@@ -39,7 +43,7 @@ class CekKuotaAI(commands.Cog):
                 return "\u001b[30m░"*panjang+"\u001b[0m"
             
             progress = min(max(jumlah/total, 0.0), 1.0)
-            terisi = int(round(panjang*progress))
+            terisi = round(panjang*progress)
             
             MERAH = "\u001b[31m"
             KUNING = "\u001b[33m"
@@ -118,6 +122,7 @@ class CekKuotaAI(commands.Cog):
             await ctx.interaction.response.send_message(embed=embed, ephemeral=True)
         else:
             await ctx.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(CekKuotaAI(bot))

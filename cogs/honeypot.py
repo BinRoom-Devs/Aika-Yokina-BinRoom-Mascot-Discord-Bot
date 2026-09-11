@@ -1,5 +1,8 @@
-import discord, datetime
+import datetime
+
+import discord
 from discord.ext import commands
+
 
 class Honeypot(commands.Cog):
     def __init__(self, bot):
@@ -28,7 +31,7 @@ class Honeypot(commands.Cog):
             print(f"[Aika] Honeypot: {pesan.author} ({pesan.author.id}) tertangkap!")
 
             embed = discord.Embed(
-                title=f"Tertangkap di honeypot! 🛑",
+                title="Tertangkap di honeypot! 🛑",
                 description="Tinjau apabila ini ketidaksengajaan atau konfirmasi dengan pemilik akun jika akses berhasil di-recover.",
                 timestamp=datetime.datetime.now(datetime.timezone.utc),
                 color=0xFF0000

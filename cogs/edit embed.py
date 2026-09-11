@@ -1,5 +1,4 @@
 import discord
-from typing import Optional
 from discord.ext import commands
 
 
@@ -9,13 +8,7 @@ class EditEmbed(commands.Cog):
 
     @commands.hybrid_command(name="edit-embed-di-infoserver", description="Ngedit isi embed di info server (jangan lupa kasih ID pesannya)")
     @commands.has_permissions(administrator=True)
-    async def editembed(
-        self, 
-        ctx: commands.Context, 
-        *, 
-        new_description: str, 
-        message_id: str
-    ):
+    async def editembed(self, ctx:commands.Context, *, new_description:str, message_id:str):
         await ctx.defer(ephemeral=False)
 
         channel = self.bot.get_channel(904972338687270992)
@@ -47,6 +40,7 @@ class EditEmbed(commands.Cog):
             await ctx.send("❌ Pesannya gaada.")
         except discord.HTTPException as e:
             await ctx.send(f"❌ Gagal ngedit pesan: {e}")
+
 
 async def setup(bot):
     await bot.add_cog(EditEmbed(bot))

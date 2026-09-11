@@ -1,6 +1,8 @@
 import discord
 from nicegui import ui
+
 from .. import state
+
 
 def render_overview_tab(bot: discord.Client):
     ui.label("Overview").classes("text-3xl font-extrabold text-white tracking-tight mb-2")
@@ -79,12 +81,11 @@ def render_overview_tab(bot: discord.Client):
 
     # 3. Terminal Console Card
     with ui.card().classes("w-full bg-[#18181b] border border-white/5 rounded-2xl p-4 gap-3 shadow-xl text-white mt-2"):
-        with ui.row().classes("w-full justify-between items-center px-2"):
-            with ui.row().classes("items-center gap-2"):
-                ui.element("div").classes("w-3 h-3 rounded-full bg-rose-500")
-                ui.element("div").classes("w-3 h-3 rounded-full bg-amber-500")
-                ui.element("div").classes("w-3 h-3 rounded-full bg-emerald-500")
-                ui.label("aika@binroom — console").classes("text-xs font-mono text-gray-400 ml-2")
+        with ui.row().classes("w-full justify-between items-center px-2"), ui.row().classes("items-center gap-2"):
+            ui.element("div").classes("w-3 h-3 rounded-full bg-rose-500")
+            ui.element("div").classes("w-3 h-3 rounded-full bg-amber-500")
+            ui.element("div").classes("w-3 h-3 rounded-full bg-emerald-500")
+            ui.label("aika@binroom — console").classes("text-xs font-mono text-gray-400 ml-2")
 
         log_area = ui.log(max_lines=50).classes(
             "w-full h-64 bg-[#09090b] text-gray-300 font-mono text-xs p-4 rounded-xl border border-white/5"

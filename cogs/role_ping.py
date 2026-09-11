@@ -1,7 +1,7 @@
-import discord
-from typing import Optional
-from discord.ext import commands
 from pathlib import Path
+
+import discord
+from discord.ext import commands
 
 BASE_DIR = Path(__file__).resolve().parent
 IMAGE_PATH = BASE_DIR / "assets" / "ping.png"

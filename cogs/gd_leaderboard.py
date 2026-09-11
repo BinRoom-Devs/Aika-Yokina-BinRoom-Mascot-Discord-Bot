@@ -1,7 +1,18 @@
-import discord, database, asyncio, aiohttp, datetime, os, random, string, math
+import asyncio
+import datetime
+import math
+import os
+import random
+import sqlite3
+import string
+
+import aiohttp
+import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+
+import database
 
 load_dotenv()
 
@@ -18,8 +29,8 @@ AUTHOR_NAME_LEADERBOARD = "BinRoom Geometry Dash Players Leaderboard"
 
 
 class GDPlayer:
-    __slots__ = (
-        "username", "accountID", "playerID", "stars", "moons", 
+    __slots__ = (  # noqa: RUF023
+        "username","accountID", "playerID", "stars", "moons", 
         "diamonds", "secretCoins", "userCoins", "demons", 
         "creatorPoints", "icon", "color1", "color2", "glow"
     )
@@ -50,7 +61,7 @@ async def load_daftar_player_async() -> list[dict]:
     def _load():
         try:
             return database.load_all_gd_players()
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f"[Aika] GD Leaderboard: gagal memuat data player SQLite: {e}")
             return []
     return await asyncio.to_thread(_load)
@@ -60,7 +71,7 @@ async def simpan_daftar_player_async(players: list[dict]):
     def _save():
         try:
             database.save_all_gd_players(players)
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f"[Aika] GD Leaderboard: gagal memperbarui data player SQLite: {e}")
     await asyncio.to_thread(_save)
 
@@ -203,7 +214,7 @@ async def cek_koneksi_robtop(session:aiohttp.ClientSession) -> bool:
         async with session.post(url_ping, data=muatan, headers=header, timeout=aiohttp.ClientTimeout(total=4)) as resp:
             tek = await resp.text()
             return resp.status == 200 and tek != "-1"
-    except Exception:
+    except (aiohttp.ClientError, asyncio.TimeoutError):
         return False
 
 
@@ -217,7 +228,7 @@ async def cari_profil_gd(session:aiohttp.ClientSession, username:str) -> tuple[i
                     return None
                 return int(data.get("accountID", 0)), int(data.get("playerID", 0)), data.get("username")
             return None
-    except Exception as e:
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
         print(f"[Aika] Error pencarian profil {username}: {e}")
         return None
 
@@ -259,7 +270,7 @@ async def baca_data_tunggal_player_async(session:aiohttp.ClientSession, player_d
 
                 return obj_player, player_dict
             return None, player_dict
-    except Exception as err:
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError, KeyError) as err:
         print(f"[Aika] GD Leaderboard: gagal membaca {target} -> {err}")
         return None, player_dict
 
@@ -294,7 +305,7 @@ async def baca_pesan_masuk_gd(session:aiohttp.ClientSession) -> list[dict]:
                     "id": dict_pesan.get("1", "")
                 })
             return daftar_pesan
-    except Exception:
+    except (aiohttp.ClientError, asyncio.TimeoutError, IndexError, ValueError):
         return []
 
 
@@ -307,7 +318,7 @@ class TampilanKategoriLeaderboard(discord.ui.LayoutView):
         kunci_stat: str,
         emoji_stat: str,
         warna_aksen: discord.Colour,
-        gambar_banner: str = None
+        gambar_banner: str | None = None
     ):
         super().__init__()
 
@@ -1085,32 +1096,24 @@ class BinrumLeaderboard(commands.Cog):
     async def sebelum_update_otomatis(self):
         await self.bot.wait_until_ready()
 
-    @commands.hybrid_command(
-        name="reset_leaderboard",
-        aliases=["refresh_leaderboard"],
-        description="Memperbarui tampilan leaderboard GD secara manual."
-    )
+    @commands.hybrid_command(name="reset_leaderboard", aliases=["refresh_leaderboard"], description="Memperbarui tampilan leaderboard GD secara manual.")
     @commands.has_permissions(administrator=True)
     async def reset_leaderboard(self, ctx:commands.Context):
         await ctx.defer(ephemeral=False)
         try:
             await self.update_tampilan_leaderboard(target_channel=ctx.channel)
             await ctx.send("<:GD_complete:1543409457940267078> Leaderboard berhasil diperbarui.")
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             await ctx.send(f"Gagal, coba lagi.\n`{e}`")
 
-    @commands.hybrid_command(
-        name="rebuild_leaderboard",
-        aliases=["render_leaderboard", "repost_leaderboard"],
-        description="Merender ulang leaderboard dari database lokal tanpa memanggil API GD."
-    )
+    @commands.hybrid_command(name="rebuild_leaderboard", aliases=["render_leaderboard", "repost_leaderboard"], description="Merender ulang leaderboard dari database lokal tanpa memanggil API GD.")
     @commands.has_permissions(administrator=True)
     async def rebuild_leaderboard(self, ctx:commands.Context):
         await ctx.defer(ephemeral=False)
         try:
             await self.render_tampilan_leaderboard_lokal(target_channel=ctx.channel)
             await ctx.send("<:GD_complete:1543409457940267078> Berhasil merender ulang leaderboard")
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             await ctx.send(f"Gagal merender ulang leaderboard.\n`{e}`")
 
     @commands.hybrid_command(

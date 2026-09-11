@@ -1,12 +1,18 @@
-import discord, os, time, asyncio, database, re
-from discord import app_commands
-from discord.ext import commands
-from groq import Groq, APIError, RateLimitError, BadRequestError
-from datetime import datetime, timezone, timedelta
+import asyncio
+import os
+import re
+import time
 from collections import deque
-from dotenv import load_dotenv
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import discord
+from discord import app_commands
+from discord.ext import commands
+from dotenv import load_dotenv
+from groq import APIError, BadRequestError, Groq, RateLimitError
+
+import database
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = BASE_DIR / ".env"
@@ -124,10 +130,8 @@ class PembatasRate:
             _, tok = self.tok_daily.popleft()
             self.tok_daily_total -= tok
 
-        if self.tok_minute_total < 0:
-            self.tok_minute_total = 0
-        if self.tok_daily_total < 0:
-            self.tok_daily_total = 0
+        self.tok_minute_total = max(self.tok_minute_total, 0)
+        self.tok_daily_total = max(self.tok_daily_total, 0)
 
     def cek_batas(self, perkiraan_token: int = DEFAULT_PERKIRAAN_TOKEN) -> tuple[bool, str]:
         now = time.time()
@@ -218,7 +222,7 @@ class AIPersona(commands.Cog):
                 f"Jika ditanya spesifik siapa yang buat sifat/rambut/baju dsb., sebutkan nama member tersebut dengan bangga/santai."
             )
             print("[Aika] Berhasil memuat data lore dari SQLite.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"[Aika] Gagal membaca lore dari SQLite: {e}")
 
         self.base_instruction = f"""
@@ -239,18 +243,18 @@ class AIPersona(commands.Cog):
     def cog_unload(self):
         try:
             self.bot.tree.remove_command(regenerate_context_standalone.name, type=regenerate_context_standalone.type)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     def buka_memori_chat(self):  # baca memori chat saat booting dari SQLite
         try:
             self.user_chats = database.load_all_user_chats()
             print(f"[Aika] Debug memori: berhasil memuat {len(self.user_chats)} memori pengguna dari SQLite.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"[Aika] Debug memori eror: gagal memuat memori SQLite: {e}")
             self.user_chats = {}
 
-    async def simpan_chat(self, user_id: int = None):  # tulis memori ke SQLite (non-blocking)
+    async def simpan_chat(self, user_id:int|None=None):  # tulis memori ke SQLite (non-blocking)
         try:
             if user_id is not None and user_id in self.user_chats:
                 await asyncio.to_thread(database.save_user_chat, user_id, self.user_chats[user_id])
@@ -259,13 +263,13 @@ class AIPersona(commands.Cog):
             else:
                 await asyncio.to_thread(database.save_all_user_chats, self.user_chats)
             print(f"[Aika] Memori percakapan ({'User ID ' + str(user_id) if user_id else 'semua user'}) berhasil disimpan ke SQLite.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"[Aika] Gagal menyimpan memori SQLite: {e}")
 
     # alias kompatibilitas
     save_user_chats = simpan_chat
 
-    def cari_atau_buatchat(self, user_id: int):
+    def cari_atau_buatchat(self, user_id:int):
         if user_id not in self.user_chats:
             self.user_chats[user_id] = []  # stor histori chat nya aja, jangan sama instruksi persona
             print(f"[Aika] Membuat riwayat percakapan baru untuk User ID: {user_id}")
@@ -289,8 +293,8 @@ class AIPersona(commands.Cog):
         return {"role": "system", "content": full_system_content}
 
     @commands.hybrid_command(name="reset_memori", description="Reset ingatan/memori percakapan", aliases=["reset", "hapus_ingatan", "reset_memory", "memory_reset"])
-    async def reset_memori(self, ctx: commands.Context):
-        print(f"[Aika] Command reset_memori dieksekusi")
+    async def reset_memori(self, ctx:commands.Context):
+        print("[Aika] Command reset_memori dieksekusi")
         if ctx.author.id not in self.user_chats:
             if ctx.interaction:
                 await ctx.interaction.response.send_message("Mau reset apa? Aika aja belum tau apapun soalmu. 🧐", ephemeral=True)
@@ -317,7 +321,7 @@ class AIPersona(commands.Cog):
 
     @commands.hybrid_command(name="memory_status", description="Cek kapasitas memorimu", aliases=["status_memori", "cek_memori"])
     async def memory_status(self, ctx: commands.Context):
-        print(f"[Aika] Command memory_status dieksekusi")
+        print("[Aika] Command memory_status dieksekusi")
         if ctx.author.id not in self.user_chats:
             if ctx.interaction:
                 await ctx.interaction.response.send_message("Mau cek apa? Aika aja belum tau apapun soalmu. 😒", ephemeral=True)
@@ -555,7 +559,7 @@ class AIPersona(commands.Cog):
 
             await target_message.edit(content=output_text)
             await interaction.delete_original_response()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"[Aika] Gagal regenerate respon: {e}")
             chat.append(last_user_entry_dict)
             chat.append({"role": "assistant", "content": last_bot_text})
@@ -659,7 +663,7 @@ class AIPersona(commands.Cog):
                 output_text = self._sanitize_mentions(output_text)
 
                 await message.reply(output_text, allowed_mentions=discord.AllowedMentions.none())
-                print(f"[Aika] Respon berhasil dikirim")
+                print("[Aika] Respon berhasil dikirim")
 
             except RateLimitError as e:
                 print(f"[Groq] Rate limit: {e}")
@@ -698,7 +702,7 @@ class AIPersona(commands.Cog):
                     "Ntar, ya... server AI lagi error... 😩",
                     allowed_mentions=discord.AllowedMentions.none()
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"[Groq] Eror anomali: {type(e).__name__}: {e}")
                 await message.reply(
                     "Aika lagi error bentar... 😵",

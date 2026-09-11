@@ -1,8 +1,12 @@
-import discord, aiohttp, re, asyncio, os
-from discord.ext import commands
-from typing import Optional, Tuple
+import asyncio
+import os
+import re
 
-CHANNEL_LOGGING = 1542006154744565870
+import aiohttp
+import discord
+from discord.ext import commands
+
+CHANNEL_LOGGING = 932191307789656064
 SIGHTENGINE_USER = os.getenv("SIGHTENGINE_USER")
 SIGHTENGINE_SECRET = os.getenv("SIGHTENGINE_SECRET")
 
@@ -20,7 +24,7 @@ JENIS_KATEGORI = {
 class SightengineScanner(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
     async def cog_load(self):
         self.session = aiohttp.ClientSession()
@@ -29,14 +33,14 @@ class SightengineScanner(commands.Cog):
         if self.session:
             await self.session.close()
 
-    async def buka_channel_logging(self, guild_or_id:int|discord.Guild) -> Optional[discord.TextChannel]:
+    async def buka_channel_logging(self, guild_or_id:int|discord.Guild) -> discord.TextChannel|None:
         guild = self.bot.get_guild(guild_or_id) if isinstance(guild_or_id, int) else guild_or_id
         if not guild:
             return None
         channel = guild.get_channel(CHANNEL_LOGGING)
         return channel if isinstance(channel, discord.TextChannel) else None
 
-    async def cek_isi_chat(self, text:str) -> Tuple[bool,str,str]:
+    async def cek_isi_chat(self, text:str) -> tuple[bool,str,str]:
         if not self.session or not text.strip():
             return False, "", ""
 
@@ -79,12 +83,12 @@ class SightengineScanner(commands.Cog):
                     alasan_bersih = "bahasa kasar"
                     return True, alasan_raw, alasan_bersih
 
-        except Exception as e:
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
             print(f"[Aika] Sightengine error saat membaca teks: {e}")
 
         return False, "", ""
 
-    async def cek_gambar(self, image_url:str) -> Tuple[bool,str,str]:
+    async def cek_gambar(self, image_url:str) -> tuple[bool,str,str]:
         if not self.session:
             return False, "", ""
 
@@ -117,7 +121,7 @@ class SightengineScanner(commands.Cog):
                 if gore > 0.70:
                     return True, f"Gore / Graphic Content ({gore * 100:.1f}%)", "gambar gore"
 
-        except Exception as e:
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
             print(f"[Aika] Sightengine error saat membaca gambar: {e}")
 
         return False, "", ""

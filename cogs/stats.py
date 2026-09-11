@@ -1,10 +1,20 @@
-import discord, time, datetime, platform, psutil, urllib.request, json, socket, os, shutil
+import datetime
+import json
+import os
+import platform
+import shutil
+import socket
+import time
+import urllib.request
+
+import discord
+import psutil
 from discord.ext import commands
 
 waktu_mulai = time.time()
-__version__ = "v2.0.0"
+__version__ = "v2.1.4"
 
-# Inisialisasi pelacakan CPU proses awal
+#inisialisasi pelacakan cpu proses awal
 proc = psutil.Process(os.getpid())
 proc.cpu_percent()
 
@@ -38,7 +48,7 @@ def get_container_ram_limit() -> float:
                         limit_bytes = int(val)
                         if limit_bytes < (1024 ** 4):  # Abaikan jika > 1 TB
                             return limit_bytes / (1024 * 1024)
-            except Exception:
+            except (OSError, ValueError):
                 pass
     return psutil.virtual_memory().total / (1024 * 1024)
 
@@ -57,29 +67,28 @@ def get_container_disk_limits() -> tuple[float, float]:
 
     # 2. Cek drive via shutil
     try:
-        total, used, free = shutil.disk_usage(".")
+        total = shutil.disk_usage(".")
         total_mb = total / (1024 * 1024)
         
         # Jika berada di container cloud (RAM < 2GB) tapi disk terbaca raksasa (>100GB host leak)
         ram_limit = get_container_ram_limit()
         if total_mb > 100000 and ram_limit < 2000:
             total_mb = 1024.0  # Default container quota fallback
-    except Exception:
+    except OSError:
         total_mb = 1024.0
 
     free_mb = max(0.0, total_mb - bot_used_mb)
     return total_mb, free_mb
 
 def get_bot_directory_size_mb(path:str=".") -> float:
-    """Menghitung total ukuran berkas bot di direktori aktif."""
     total_size = 0
     try:
-        for dirpath, dirnames, filenames in os.walk(path):
+        for dirpath, filenames in os.walk(path):
             for f in filenames:
                 fp = os.path.join(dirpath, f)
                 if not os.path.islink(fp):
                     total_size += os.path.getsize(fp)
-    except Exception:
+    except OSError:
         pass
     return total_size / (1024 * 1024)
 
@@ -103,19 +112,19 @@ def get_hosting_provider() -> str:
             
             if provider:
                 return provider
-    except Exception:
+    except (urllib.error.URLError, OSError, json.JSONDecodeError):
         pass
 
     try:
         hostname = socket.gethostname()
         if hostname:
             return hostname
-    except Exception:
+    except OSError:
         pass
     return "lokal/self-hosted"
 
 def make_bar(persen:float, panjang:int=11) -> str:
-    terisi = int(round(panjang * max(0.0, min(persen, 100.0)) / 100))
+    terisi = round(panjang * max(0.0, min(persen, 100.0)) / 100)
     return "█" * terisi + "░" * (panjang - terisi)
 
 def format_size(mb_value:float) -> str:
@@ -159,7 +168,7 @@ class Stats(commands.Cog):
         embed.add_field(name="Dibuat", value=discord.utils.format_dt(self.bot.user.created_at, style="d"), inline=True)
 
         # Row 2: Runtime
-        delta = datetime.timedelta(seconds=int(round(time.time() - waktu_mulai)))
+        delta = datetime.timedelta(seconds=round(time.time() - waktu_mulai))
         waktu_aktif = format_stopwatch(delta)
         embed.add_field(name="ID Bot", value=str(self.bot.user.id), inline=True)
         embed.add_field(name="Waktu Aktif", value=waktu_aktif, inline=True)
@@ -212,7 +221,7 @@ class Stats(commands.Cog):
         try:
             freq_info = psutil.cpu_freq()
             cpu_freq = f"{freq_info.current:.0f} MHz" if freq_info and freq_info.current else "N/A"
-        except Exception:
+        except (psutil.Error, OSError):
             cpu_freq = "N/A"
 
         embed.add_field(
@@ -242,7 +251,7 @@ class Stats(commands.Cog):
             root_fs = next((p.fstype for p in partitions if p.mountpoint in ('/', 'C:\\')), "N/A")
             if not root_fs or root_fs == "N/A":
                 root_fs = partitions[0].fstype if partitions else "N/A"
-        except Exception:
+        except (psutil.Error, OSError):
             root_fs = "N/A"
 
         try:
@@ -250,7 +259,7 @@ class Stats(commands.Cog):
             read_mb = disk_io.read_bytes / (1024 ** 2)
             write_mb = disk_io.write_bytes / (1024 ** 2)
             io_str = f"R: {read_mb:.1f}MB, W: {write_mb:.1f}MB"
-        except Exception:
+        except (psutil.Error, OSError):
             io_str = "N/A"
 
         embed.add_field(
