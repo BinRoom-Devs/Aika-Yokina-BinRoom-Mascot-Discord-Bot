@@ -10,7 +10,7 @@ OWNER_ID = 1524951093560213638 #@arumugi_4405
 SERVER_ID = 1537905133311230112 #mugi cloud
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI", "http://localhost:8080/auth/callback")
+REDIRECT_URL = os.getenv("DISCORD_REDIRECT_URL", "http://localhost:8080/auth/callback")
 
 
 def setup_auth(fastapi_app):
@@ -22,7 +22,7 @@ def setup_auth(fastapi_app):
     def login():
         discord_auth_url = (
             f"https://discord.com/oauth2/authorize?client_id={DISCORD_CLIENT_ID}"
-            f"&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify"
+            f"&redirect_url={REDIRECT_URL}&response_type=code&scope=identify"
         )
         return RedirectResponse(discord_auth_url)
 
@@ -37,7 +37,7 @@ def setup_auth(fastapi_app):
             "client_secret": DISCORD_CLIENT_SECRET,
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": REDIRECT_URI,
+            "redirect_url": REDIRECT_URL,
         }
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
