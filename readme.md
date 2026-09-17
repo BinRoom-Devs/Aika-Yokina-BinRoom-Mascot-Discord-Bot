@@ -13,7 +13,7 @@
       		<img src="https://discord.com/api/guilds/904972136328888340/widget.png?style=banner3" alt="Discord Server Widget"/>
     	</td>
     	<td rowspan="2" align="center" valign="middle" style="border:none !important; padding=5px 0px 0px 0px;">
-      		<img src="http://localhost:8080/api/card.svg" height="350" width="380px" style="object-fit:contain; border:none;" alt="Bot Status Card"/>
+      		<img src="http://78.154.103.7:16426/api/card.svg" height="350" width="380px" style="object-fit:contain; border:none;" alt="Bot Status Card"/>
     	</td>
   	</tr>
   	<tr style="border:none !important;">
