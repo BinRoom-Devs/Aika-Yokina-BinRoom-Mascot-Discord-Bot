@@ -1,0 +1,7 @@
+discord.py
+groq
+python-dotenv
+nicegui
+aiohttp
+pillow
+trustme
