@@ -4,6 +4,11 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v2.6.1
+### Perbaikan:
+- Sedikit fix di command `version` biar bisa nge-fetch info build dan pembaruan dari git kalo lagi di hostingan.
+
+
 ## v2.6.0 - 18 Sept 2026
 ### Penambahan:
 - Command baru:
