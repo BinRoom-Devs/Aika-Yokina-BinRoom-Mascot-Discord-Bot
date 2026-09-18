@@ -12,8 +12,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-BINROOM = 1537905133311230112
-LOG_CHANNEL_ID = 1542006154744565870
+BINROOM = 904972136328888340
+LOG_CHANNEL_ID = 932191307789656064
 CHANNEL_PENGECUALIAN = 1498144198577356831
 WARNA_DISCORD = discord.Color.from_str("#5662f6")
 WARNA_AIKA = discord.Color.from_str("#D675C1")

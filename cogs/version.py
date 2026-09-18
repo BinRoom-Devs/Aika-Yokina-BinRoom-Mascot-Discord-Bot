@@ -1,27 +1,49 @@
+import json
 import subprocess
+import urllib.request
+from datetime import datetime
 
 import discord
 from discord.ext import commands
 
-VERSI_AIKA = "v2.6.0"
+VERSI_AIKA = "v2.6.1"
 LINK_REPO = "https://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot"
+API_GITHUB = "https://api.github.com/repos/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot/commits/main"
 
 def baca_info_git():
     try:
         keluaran = subprocess.check_output(
-            ["git", "log", "-1", "--format=%h,%H,%ct"], # %h = hash pendek, # %H = hash lengkap, %ct = format timestamp unix
+            ["git", "log", "-1", "--format=%h,%H,%ct"],
             stderr=subprocess.DEVNULL
         ).decode("utf-8").strip()
         
         hash_commit, hash_panjang, waktu_commit = keluaran.split(",")
         return hash_commit, hash_panjang, int(waktu_commit)
-    
+    except (subprocess.SubprocessError, OSError, ValueError):
+        pass
+
+    try:
+        req = urllib.request.Request(
+            API_GITHUB, 
+            headers={"User-Agent": "Aika-Bot-Version-Checker"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            
+            hash_panjang = data["sha"]
+            hash_commit = hash_panjang[:7]
+            
+            iso_date = data["commit"]["committer"]["date"]
+            dt = datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
+            waktu_commit = int(dt.timestamp())
+            
+            return hash_commit, hash_panjang, waktu_commit
     except Exception:  # noqa: BLE001
         return "N/A", "", 0
 
 
 class VersiAika(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.__version__ = VERSI_AIKA
         self.hash_commit, self.hash_lengkap, self.timestamp_commit = baca_info_git()
@@ -36,7 +58,7 @@ class VersiAika(commands.Cog):
                     "**Versi Aika**\n"
                     f"# {self.__version__}"
                 )),
-                accessory = discord.ui.Thumbnail(media=self.bot.user.display_avatar.url)
+                accessory=discord.ui.Thumbnail(media=self.bot.user.display_avatar.url)
             )
         )
         
