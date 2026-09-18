@@ -4,6 +4,7 @@ import os
 import platform
 import shutil
 import socket
+import sys
 import time
 import urllib.request
 
@@ -12,7 +13,6 @@ import psutil
 from discord.ext import commands
 
 waktu_mulai = time.time()
-VERSI_BOT = "v2.6.0"
 
 # Inisialisasi pelacakan CPU proses awal
 proc = psutil.Process(os.getpid())
@@ -149,8 +149,7 @@ class LinksView(discord.ui.View):
 class Stats(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
-        self.__version__ = VERSI_BOT
-
+    
     @commands.hybrid_command(name="stats", description="Liat statistik tentang bot ini.")
     async def stats(self, ctx:commands.Context):
         await ctx.defer()
@@ -172,7 +171,7 @@ class Stats(commands.Cog):
         #row 2: runtime
         delta = datetime.timedelta(seconds=round(time.time() - waktu_mulai))
         waktu_aktif = format_stopwatch(delta)
-        embed.add_field(name="ID Bot", value=str(self.bot.user.id), inline=True)
+        embed.add_field(name="ID Bot", value=f"`{self.bot.user.id}`", inline=True)
         embed.add_field(name="Waktu Aktif", value=waktu_aktif, inline=True)
         embed.add_field(name="Ping", value=f"{round(self.bot.latency * 1000)}ms", inline=True)
 
@@ -274,8 +273,15 @@ class Stats(commands.Cog):
             inline=True
         )
 
+        version = ''
+        version_cog = self.bot.get_cog("VersiAika") or self.bot.get_cog("cogs.version")
+        if version_cog and hasattr(version_cog, "__version__"):
+            version = version_cog.__version__
+        elif "stats" in sys.modules and hasattr(sys.modules["stats"], "__version__"):
+            version = sys.modules["stats"].__version__
+        
         nama_hostingan = get_hosting_provider()
-        embed.set_footer(text=f"Versi Aika: {self.__version__} | Layanan hosting: {nama_hostingan}", icon_url="https://cdn.discordapp.com/attachments/863959650448703538/1540201066455371888/bunga.png?ex=6a8b11c5&is=6a89c045&hm=2f7837e9e91cf914975584cb8ba5f001f80ea54d36c86e643547b1f23a111b26&")
+        embed.set_footer(text=f"Versi Aika: {version} | Layanan hosting: {nama_hostingan}", icon_url="https://cdn.discordapp.com/attachments/863959650448703538/1540201066455371888/bunga.png?ex=6a8b11c5&is=6a89c045&hm=2f7837e9e91cf914975584cb8ba5f001f80ea54d36c86e643547b1f23a111b26&")
 
         is_admin = getattr(ctx.author.guild_permissions, "administrator", False) if ctx.guild else False
         
