@@ -4,3 +4,5 @@ python-dotenv
 nicegui
 aiohttp
 pillow
+psutil
+aiosqlite
