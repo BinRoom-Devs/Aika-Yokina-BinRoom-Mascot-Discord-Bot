@@ -22,7 +22,7 @@ class Uptime(commands.Cog):
             return f"{jam}:{menit:02d}:{detik:02d}"
         else:
             return f"{menit:02d}:{detik:02d}"
-
+    
     @commands.hybrid_command(name="uptime", description="Menampilkan waktu aktif Aika.")
     async def uptime(self, ctx:commands.Context):
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -31,14 +31,17 @@ class Uptime(commands.Cog):
         waktu_aktif = self.format_stopwatch(delta)
         timestamp_awal = int(self.start_time.timestamp())
         
-        embed = discord.Embed(
-            title="⏲️ Waktu Aktif Aika",
-            color=0xD675C1 
+        container = discord.ui.Container(accent_color=0xD675C1)
+        container.add_item(discord.ui.TextDisplay(
+            content=("**⏲️ Waktu Aktif Aika**\n"
+                     f"# {waktu_aktif}")
+        ))
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(discord.ui.TextDisplay(
+            content=f"-# Terakhir restart: <t:{timestamp_awal}:D> <t:{timestamp_awal}:T>")
         )
-        embed.add_field(name="Online selama", value=f"`{waktu_aktif}`\n<t:{timestamp_awal}:R>", inline=True)
-        embed.add_field(name="Terakhir restart", value=f"<t:{timestamp_awal}:d>\n<t:{timestamp_awal}:T>", inline=True)
         
-        await ctx.send(embed=embed)
+        await ctx.send(view=discord.ui.LayoutView().add_item(container))
 
 
 async def setup(bot:commands.Bot):

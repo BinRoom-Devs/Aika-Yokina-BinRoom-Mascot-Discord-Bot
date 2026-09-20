@@ -78,7 +78,11 @@ class Eval(commands.Cog):
     
     async def _kirim_container(self, ctx, content:str, warna:int, tag_bhs:str="ansi", footer:str|None=None):
         container = discord.ui.Container(accent_color=warna)
-        container.add_item(discord.ui.TextDisplay(content=f"```{tag_bhs}\n{content}\n```"))
+        container.add_item(discord.ui.TextDisplay(content=(
+            "🔴 🟡 🟢 `Aika Yokina - eval.py`\n"
+            "\n"
+            f"```{tag_bhs}\n{content}\n```"
+        )))
         
         if footer:
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))

@@ -4,4 +4,3 @@ python-dotenv
 nicegui
 aiohttp
 pillow
-trustme

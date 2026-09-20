@@ -97,10 +97,10 @@ class LogTerminal(commands.Cog):
     @commands.is_owner()
     async def terminal(self, ctx:commands.Context, jumlah_baris:int|None=None):
         if jumlah_baris is not None:
-            judul_cont = f"### Terminal Aika ({jumlah_baris} baris)"
+            judul_cont = f"🔴 🟡 🟢 **Terminal Aika** ({jumlah_baris} baris)"
             baris_diambil = jumlah_baris
         else:
-            judul_cont = "### Terminal Aika"
+            judul_cont = "🔴 🟡 🟢 **Terminal Aika**"
             baris_diambil = 8 
         
         total_baris = max(1, min(baris_diambil, 50)) #pembatas smpe 50

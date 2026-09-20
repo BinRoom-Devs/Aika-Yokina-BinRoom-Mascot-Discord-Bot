@@ -4,12 +4,32 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.6.1
+## v2.7.0 - 20 Sept 2026
+### Penambahan:
+- Command baru: `info` dan `system`. Mereka ini basically pemisahan dari `stats` karena informasinya kegabung di command itu. Akhirnya sekarang dipisahin. `info` pure nampilin informasi bot nya, sedangkan `system` fokus ke informasi alokasi / rincian sistem. (Anggap aja command `info` itu versi refresh dari `stats` wkwk, skalian juga migrasi tampilan dari embed ke Components v2).
+
+- Pada logging member keluar, di-kick, atau di-ban, ditambahkan info rentang waktu member tersebut berada di server. (Misalnya: member selama <u>2 tahun</u>).
+
+- Aika sekarang bakal nyambut dan ngucapin dadah di `#keluar-masuk` kalau ada yang join atau keluar (atau bahkan ke-kick / ke-ban).
+
+### Perubahan:
+- Tampilan baru pada command `ping` dan `uptime`! Mereka berdua juga hijrah dari embed ke Components v2 biar lebih ganteng dan rapi, baik untuk mobile maupun desktop.
+
+  - Pada command `ping`, selain redesain ulang tampilan, command ini juga ketambahan informasi latensi lain, yaitu REST API, Round-Trip, dan database.
+
+- Command `eval` dan `terminal` juga ada perubahan tampilan: ditambahin header seolah-olah kayak window CMD di MacOS wkwk.
+
+### Penghapusan:
+- Sebagai bagian dari redesain tampilan `stats` yang sekarang berubah jadi `system`, tombol pada bawah embed-nya sekarang dihilangkan.
+
+
+
+## v2.6.1 - 18 Sept 2026
 ### Perbaikan:
 - Sedikit fix di command `version` biar bisa nge-fetch info build dan pembaruan dari git kalo lagi di hostingan.
 
 
-## v2.6.0 - 18 Sept 2026
+## v2.6.0
 ### Penambahan:
 - Command baru:
 

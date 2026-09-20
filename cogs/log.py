@@ -12,12 +12,14 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
+OWNER_ID = int(os.getenv("OWNER_ID", "1524951093560213638")) # @arumugi_4405
 BINROOM = 904972136328888340
 LOG_CHANNEL_ID = 932191307789656064
+CHANNEL_SAMBUTAN = 904973494813614141
 CHANNEL_PENGECUALIAN = 1498144198577356831
+
 WARNA_DISCORD = discord.Color.from_str("#5662f6")
 WARNA_AIKA = discord.Color.from_str("#D675C1")
-OWNER_ID = int(os.getenv("OWNER_ID", "1524951093560213638"))
 
 LOGO_AUTOMOD = "https://cdn.discordapp.com/attachments/863959650448703538/1541927557501296711/632a24dc0918d34459738418_AutoMod-Final-Blog-Author.png"
 LOGO_DISCORD = "https://cdn.discordapp.com/attachments/863959650448703538/1541928366981128305/Discord-Symbol-Blurple.png"
@@ -120,6 +122,25 @@ class ServerLogger(commands.Cog):
                 next_unit_name, next_unit_sec = units[units.index((name, unit_sec)) + 1]
                 sub_val = rem // next_unit_sec
                 return f"{val} {name} {sub_val} {next_unit_name}" if sub_val > 0 else f"{val} {name}"
+        return f"{detik} detik"
+    
+    @staticmethod
+    def format_durasi_tunggal(detik: int) -> str:
+        detik = max(detik, 0)
+        units = [
+            ("tahun", 365 * 24 * 3600),
+            ("bulan", 30 * 24 * 3600),
+            ("minggu", 7 * 24 * 3600),
+            ("hari", 24 * 3600),
+            ("jam", 3600),
+            ("menit", 60),
+            ("detik", 1),
+        ]
+
+        for name, unit_sec in units:
+            if detik >= unit_sec:
+                val = detik // unit_sec
+                return f"{val} {name}"
         return f"{detik} detik"
     
     def _buat_footer_sistem(self) -> str:
@@ -542,9 +563,11 @@ class ServerLogger(commands.Cog):
     # 2. ANGGOTA & PROFIL
     # ==========================================
     @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member) -> None:
+    async def on_member_join(self, member:discord.Member) -> None:
         channel = await self.buka_channel_logging(member.guild)
-        if not channel:
+        channel_sambutan = self.bot.get_channel(CHANNEL_SAMBUTAN)
+        
+        if not channel or not channel_sambutan:
             return
         
         if member.bot:
@@ -569,16 +592,40 @@ class ServerLogger(commands.Cog):
                 timestamp=discord.utils.utcnow()
             )
             embed.set_footer(text=f"ID User: {member.id}")
+            
+            container = discord.ui.Container(accent_color=discord.Color.green())
+            container.add_item(discord.ui.TextDisplay(content=f"## Selamat datang, {member.mention}! 🩷👋🏻"))
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(discord.ui.Section(
+                discord.ui.TextDisplay(content=(
+                    "Selamat bergabung di BinRoom!\n"
+                    "Semoga betah!\n"
+                    "\n"
+                    "-# Mampir dulu di <#904972338687270992> & <#1539871181765611560> yah."
+                )),
+                accessory=discord.ui.Thumbnail(media=member.display_avatar.url)
+            ))
         
         embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         embed.set_thumbnail(url=member.display_avatar.url)
+        
         await channel.send(embed=embed)
+        await channel_sambutan.send(view=discord.ui.LayoutView().add_item(container))
     
     @commands.Cog.listener()
     async def on_member_remove(self, member:discord.Member) -> None:
         channel = await self.buka_channel_logging(member.guild)
-        if not channel:
+        channel_sambutan = self.bot.get_channel(CHANNEL_SAMBUTAN)
+        
+        if not channel or not channel_sambutan:
             return
+        
+        str_durasi = ""
+        durasi = ""
+        if member.joined_at:
+            total_detik = int((discord.utils.utcnow() - member.joined_at).total_seconds())
+            str_durasi = f"\n-# (Pernah jadi member selama __{self.format_durasi_tunggal(total_detik)}__)"
+            durasi = self.format_durasi_tunggal(total_detik)
         
         kick_entry = None
         if member.guild.me.guild_permissions.view_audit_log:
@@ -602,24 +649,55 @@ class ServerLogger(commands.Cog):
             
             embed = discord.Embed(
                 title="📤🦵🏻👤 Member Di-kick",
-                description=f"{member.mention} telah dikeluarkan dari server.",
+                description=f"{member.mention} telah dikeluarkan dari server.{str_durasi}",
                 color=discord.Color.red(),
                 timestamp=discord.utils.utcnow()
             )
             embed.add_field(name="Di-kick oleh", value=actor.mention if actor else "Tidak Diketahui", inline=True)
             embed.add_field(name="Alasan", value=reason, inline=True)
+            
+            alasan = f"gara2 __{reason}__" if reason != 'Tidak ada alasan' else ''
+            container = discord.ui.Container(accent_color=discord.Color.red())
+            container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.mention} 😠🦵🏻"))
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(discord.ui.Section(
+                discord.ui.TextDisplay(content=(
+                    f"Mampus luwh **di-kick** sama {actor.mention} {alasan}.\n"
+                    "\n"
+                    f"Jauh-jauh sana!\n"
+                )),
+                accessory=discord.ui.Thumbnail(media=member.display_avatar.url)
+            ))
         else:
             embed = discord.Embed(
                 title="📤🚪👤 Member Keluar",
-                description=f"{member.mention} meninggalkan server.",
+                description=f"{member.mention} meninggalkan server.{str_durasi}",
                 color=discord.Color.red(),
                 timestamp=discord.utils.utcnow()
             )
+            
+            container = discord.ui.Container(accent_color=discord.Color.red())
+            container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.mention} 😿💔"))
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(discord.ui.Section(
+                discord.ui.TextDisplay(content=(
+                    f"Terima kasih atas kebersamaannya selama __{durasi}__ ini...\n"
+                    f"Semoga ketemu tempat yang lebih cocok...\n"
+                    "\n"
+                    "-# Mampir lagi kapan-kapan kesini yah.."
+                )),
+                accessory=discord.ui.Thumbnail(media=member.display_avatar.url)
+            ))
         
         embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.set_footer(text=f"ID User: {member.id}")
+        
         await channel.send(embed=embed)
+        await channel_sambutan.send(
+            view=discord.ui.LayoutView().add_item(container),
+            allowed_mentions=discord.AllowedMentions.none()
+        )
     
     @commands.Cog.listener()
     async def on_user_update(self, before:discord.User, after:discord.User) -> None:
@@ -873,7 +951,7 @@ class ServerLogger(commands.Cog):
                 total_detik = 0
                 if waktu_join:
                     total_detik = int((discord.utils.utcnow() - waktu_join).total_seconds())
-                    str_durasi = f"\n-# (Berada di VC selama __{self.format_durasi(total_detik)}__)"
+                    str_durasi = f"\n-# (Sempat berada di VC selama __{self.format_durasi(total_detik)}__)"
                 
                 cog_stats = self.bot.get_cog("StatistikHarian")
                 if cog_stats and hasattr(cog_stats, "catat_durasi_vc"):
@@ -953,7 +1031,7 @@ class ServerLogger(commands.Cog):
             str_durasi_strm = ""
             if after.self_stream:
                 self.streaming_states[member.id] = discord.utils.utcnow()
-                state_text = "✅ memulai screen sharing"
+                state_text = "🎥 memulai screen sharing"
                 warna_role = discord.Color.green()
             else:
                 waktu_streaming = self.streaming_states.pop(member.id, None)
@@ -1450,7 +1528,9 @@ class ServerLogger(commands.Cog):
     @commands.Cog.listener()
     async def on_member_ban(self, guild:discord.Guild, user:discord.User|discord.Member) -> None:
         channel = await self.buka_channel_logging(guild)
-        if not channel:
+        channel_sambutan = self.bot.get_channel(CHANNEL_SAMBUTAN)
+        
+        if not channel or not channel_sambutan:
             return
         
         actor, reason = await self.baca_audit_log(guild, discord.AuditLogAction.ban, user.id)
@@ -1468,7 +1548,24 @@ class ServerLogger(commands.Cog):
         embed.set_thumbnail(url=user.display_avatar.url)
         embed.set_footer(text=f"User ID: {user.id}")
         
+        alasan = f"gara2 __{reason}__" if reason != 'Tidak ada alasan' else ''
+        container = discord.ui.Container(accent_color=discord.Color.red())
+        container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {user.mention} 😠🔨"))
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(discord.ui.Section(
+            discord.ui.TextDisplay(content=(
+                f"Mampus luwh **di-ban** sama {actor.mention} {alasan}.\n"
+                "\n"
+                f"Jauh-jauh sana!\n"
+            )),
+            accessory=discord.ui.Thumbnail(media=user.display_avatar.url)
+        ))
+        
         await channel.send(embed=embed)
+        await channel_sambutan.send(
+            view=discord.ui.LayoutView().add_item(container),
+            allowed_mentions=discord.AllowedMentions.none()
+        )
     
     @commands.Cog.listener()
     async def on_member_unban(self, guild:discord.Guild, user:discord.User) -> None:

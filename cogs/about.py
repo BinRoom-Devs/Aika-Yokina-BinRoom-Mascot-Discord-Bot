@@ -1,5 +1,17 @@
+from dataclasses import dataclass
+
 import discord
 from discord.ext import commands
+
+
+@dataclass
+class Saya:
+    nama: str = "Aika Yokina"
+    umur: str = "17 tahun"
+    gender: str = "Perempuan"
+    tinggi: str = "152 cm"
+    berat: str = "~55 kg"
+    kebangsaan: str = "Indonesia"
 
 
 class About(commands.Cog):
@@ -20,37 +32,37 @@ class About(commands.Cog):
             
         embed.add_field(
             name = "Nama",
-            value = "Aika Yokina",
+            value = Saya().nama,
             inline = True
         )
         embed.add_field(
             name = "Umur",
-            value = "17 tahun",
+            value = Saya().umur,
             inline = True
         )
         embed.add_field(
             name = "Jenis kelamin",
-            value = "Perempuan",
+            value = Saya().gender,
             inline = True
         )
         embed.add_field(
             name = "Tinggi",
-            value = "152cm",
+            value = Saya().tinggi,
             inline = True
         )
         embed.add_field(
             name = "Berat",
-            value = "~55kg",
+            value = Saya().berat,
             inline = True
         )
         embed.add_field(
             name = "Kebangsaan",
-            value = "Indonesia",
+            value = Saya().kebangsaan,
             inline = True
         )
             
-        embed.set_footer(text="Untuk info statisik bot, cek ak!stats")
-
+        embed.set_footer(text="Untuk info statisik bot, cek ak!info")
+        
         await ctx.send(embed=embed)
         print("[Aika] Command about dieksekusi")
 
