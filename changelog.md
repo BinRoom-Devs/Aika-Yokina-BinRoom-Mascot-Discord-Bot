@@ -4,6 +4,20 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v2.7.1 - 21 Sept 2026
+### Perbaikan:
+- Sedikit bugfix di`info`: 
+
+  - Ganti tulisan dari "Bahasa pemrograman" jadi "Bahasa program" biar lebih singkat.
+  
+  - (Dalam kodingan) fix bug kecil soalnya cog-nya gabisa ke-load otomatis njir (harus di-load manual pakai command `eval`).
+
+  - Ganti format tanggal di footer update dari bentuk full (`20 September 2026`) jadi lebih singkat biar gak bocor sampe dua baris kalo diliat dari hape (`20/09/26`).
+
+### Penghapusan:
+- (Dalam hostingan) lupa ngehapus file stats.py njirrr.
+
+
 ## v2.7.0 - 20 Sept 2026
 ### Penambahan:
 - Command baru: `info` dan `system`. Mereka ini basically pemisahan dari `stats` karena informasinya kegabung di command itu. Akhirnya sekarang dipisahin. `info` pure nampilin informasi bot nya, sedangkan `system` fokus ke informasi alokasi / rincian sistem. (Anggap aja command `info` itu versi refresh dari `stats` wkwk, skalian juga migrasi tampilan dari embed ke Components v2).

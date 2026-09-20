@@ -176,26 +176,49 @@ class InformasiSistem:
 
 
 class Info(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.utils = InformasiSistem()
         
-        self.nama = self.bot.user.name
-        self.icon = self.bot.user.display_avatar.url
-        self.dev = f"<@{self.bot.owner_id}>" if self.bot.owner_id else "@arumugi_4405"
-        self.tgl_buat = discord.utils.format_dt(self.bot.user.created_at, style="D")
-        self.id = self.bot.user.id
-        
-        skrg = datetime.datetime.now().astimezone()
-        self.zona_waktu = f"{skrg.tzname()} ({skrg.strftime('%H:%M')})"
-        
-        self.bhsa = f"Python v{platform.python_version()}"
-        self.framework = f"discord.py v{discord.__version__}"
-        self.os = platform.system()
         self.jalur_db = "data/aika.db"
         self.link_repo = "https://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot"
         
         self.hash_commit, self.hash_panjang, self.timestamp_commit = self.utils.baca_info_git()
+    
+    @property
+    def nama(self) -> str:
+        return self.bot.user.name if self.bot.user else "Aika Yokina"
+    
+    @property
+    def icon(self) -> str:
+        return self.bot.user.display_avatar.url if self.bot.user \
+        else "https://cdn.discordapp.com/avatars/1533821291134582896/93b7ad6f1ca97eb0c4abbfa576f2f907.png?size=1024"
+    
+    @property
+    def dev(self) -> str:
+        return f"<@{self.bot.owner_id}>" if self.bot.owner_id else "@arumugi_4405"
+    
+    @property
+    def tgl_buat(self) -> str:
+        if self.bot.user:
+            return discord.utils.format_dt(self.bot.user.created_at, style="D")
+        return "3 Agustus 2026"
+    
+    @property
+    def bot_id(self) -> int | str:
+        return self.bot.user.id if self.bot.user else "1533821291134582896"
+    
+    @property
+    def bhsa(self) -> str:
+        return f"Python v{platform.python_version()}"
+    
+    @property
+    def framework(self) -> str:
+        return f"discord.py v{discord.__version__}"
+    
+    @property
+    def os(self) -> str:
+        return platform.system()
     
     async def hitung_latensi(
         self, ctx:commands.Context, 
@@ -312,7 +335,7 @@ class Info(commands.Cog):
             f"- **Nama:** {self.nama}\n"
             f"- **Pengembang:** {self.dev}\n"
             f"- **Dibuat:** {self.tgl_buat}\n"
-            f"- **ID:** `{self.id}`\n"
+            f"- **ID:** `{self.bot_id}`\n"
             f"- **Waktu aktif:** {self.uptime}"
         )
         container.add_item(discord.ui.Section(
@@ -323,7 +346,7 @@ class Info(commands.Cog):
         self.pemisah(container)
         
         bagian_2 = (
-            f"- **Bahasa pemrograman:** {self.bhsa}\n"
+            f"- **Bahasa program:** {self.bhsa}\n"
             f"- **Framework:** {self.framework}\n"
             f"- **Sistem operasi:** {self.os}\n"
             f"- **Hosting:** {self.utils.baca_provider_hosting()}"
@@ -355,7 +378,7 @@ class Info(commands.Cog):
         
         self.pemisah(container)
         
-        tgl_update = f"<t:{self.timestamp_commit}:D>" if self.timestamp_commit else "N/A"
+        tgl_update = f"<t:{self.timestamp_commit}:d>" if self.timestamp_commit else "N/A"
         link_build = f"{self.link_repo}/commit/{self.hash_panjang}" if self.hash_panjang else self.link_repo
         info_build = f"[`{self.hash_commit}`]({link_build})" if self.hash_commit != "N/A" else "N/A"
         
