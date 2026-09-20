@@ -1,4 +1,4 @@
-# Changelog
+# Changelog (Riwayat Pembaruan)
 
 Perubahan pada bot akan dicatat pada file ini.
 
@@ -30,19 +30,20 @@ Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/
 
 
 ## v2.6.0
+## v2.6.0
 ### Penambahan:
 - Command baru:
 
-  - `eval` (khusus owner/dev) biar bisa utak atik bot nya lewat terminal **live dalam Discord** tanpa perlu repot-repot ke website hostingan.
+  - `eval` (khusus owner/dev) biar bisa utak-atik bot-nya lewat terminal **live langsung dari Discord** tanpa perlu repot-repot ke website hostingan.
 
   - `version`, buat ngecek versi bot tanpa harus baca embed besar lewat command `stats`.
 
 - Ditambahkan error handling untuk command yang tak diketahui bot, sekaligus sistem saran jika ada typo saat ngetik nama command-nya.
 
-- Ditambahin keterangan waktu pada footer di logging biar gampang ngeliat waktu logging nya dari hape.
+- Ditambahin keterangan waktu pada footer di logging biar gampang ngeliat waktu logging-nya dari hape.
 
 ### Perubahan:
-- (Dalam kodingan) variabel yang nge-host versi bot nya dipindahin dari stats.py ke version.py 
+- (Dalam kodingan) variabel yang nge-host versi bot-nya dipindahin dari stats.py ke version.py 
 
 - (Dalam kodingan) sistem deteksi token bot pada .env di bot.py diperkuat dengan `override=True`
 
@@ -139,9 +140,9 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
   - Judul embed-nya sekarang ditambahin emoji di awal biar makin representatif secara visual. (Baru ditengok bentar doang udah bisa ketahuan ini apa sebelum ngebaca teks apapun).
 
-  - Ditambahkan logging on dan off Aika, sekalian juga kalau Aika-nya sempat keputus dari session gateaway.
+  - Ditambahkan logging on dan off Aika, sekalian juga kalau Aika-nya sempat keputus dari session gateway.
 
-  - Ketambahan juga sistem pendeteksi konten sensitif dan Aika bakal ngelaporin ke para admin dengan cara nge-tag (hayoloh). Ditenagai dengan [Sightengine](https://sightengine.com/), sistem ini bisa mendeteksi konten sensitif mulai dari pesan yang bernada umpatan atau ujaran tak senonoh, sampai gambar/media sugestif, eksplisit, dan gore.
+  - Ketambahan juga sistem pendeteksi konten sensitif dan Aika bakal ngelaporin ke para admin dengan cara nge-tag (hayoloh). Ditenagai oleh [Sightengine](https://sightengine.com/), sistem ini bisa mendeteksi konten sensitif mulai dari pesan yang bernada umpatan atau ujaran tak senonoh, sampai gambar/media sugestif, eksplisit, dan gore.
 
 - Penambahan beberapa command-command utilitas:
 
@@ -151,11 +152,11 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
   - `clear_cache` (khusus owner) buat ngebersihin bot Aika tanpa perlu restart.
 
-  - `restart` dan `shutdown` (khusus owner) buat nge-restart atau matiin bot tanpa harus utak atik terminal.
+  - `restart` dan `shutdown` (khusus owner) buat nge-restart atau matiin bot tanpa harus utak-atik terminal.
 
 - Halaman web dashboard (khusus para admin) buat ngelola bot Aika!
 
-- Leaderboard Geometry Dash untuk para player GD BinRoom! Bisa diliat di channel `#leaderboard` pada kategori `BinRoom GD` atau lewat command `binroom_gd_leaderboard`.
+- Leaderboard Geometry Dash untuk para player GD BinRoom! Bisa dilihat di channel `#leaderboard` pada kategori `BinRoom GD` atau lewat command `binroom_gd_leaderboard`.
 
 ### Perubahan:
 - Migrasi sistem database dari JSON ke SQLite.
@@ -194,12 +195,12 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
 - Tampilan embed di command `ping`: ditambahin tulisan "Latensi Aika" di bagian atas.
 
-- Bar/garis indikator kuota AI dikasih warna kayak meteran, dan redesain tampilan bar nya.
+- Bar/garis indikator kuota AI dikasih warna kayak meteran, dan redesain tampilan bar-nya.
 
 
 ## v1.2.0 - 24 Agst 2026
 ### Penambahan:
-- Command baru: `ai_chatbot_stats` biar bisa liat statistik penggunaan API dari Groq buat AI nya Aika.
+- Command baru: `ai_chatbot_stats` biar bisa liat statistik penggunaan API dari Groq buat AI-nya Aika.
 
 - Sistem logging untuk para admin! Tersedia di channel khusus.
 
@@ -208,11 +209,11 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
 ## v1.1.0 - 23 Agst 2026
 ### Penambahan:
-- Fitur baru: Aika AI! Ditenagai oleh [Groq Qwen 3.6-27B](https://qwen.ai/blog?id=qwen3.6-27b), Aika kini bisa berinteraksi dengan kalian para member server layaknya chatbot pada umumnya! Dia pun ngeresponnya pake persona-nya yang dingin. Penambahan ini bertujuan biar maskot server terasa hadir di tengah-tengah kita.
+- Fitur baru: Aika AI! Ditenagai oleh [Groq Qwen 3.6-27B](https://qwen.ai/blog?id=qwen3.6-27b), Aika kini bisa berinteraksi dengan kalian para member server layaknya chatbot pada umumnya! Dia pun ngeresponnya pake persona-nya yang dingin. Penambahan ini bertujuan agar maskot server terasa hadir di tengah-tengah kita.
 
   - Aika bisa kalian ajak berinteraksi di channel khususnya atau bisa juga di-mention (kalau di luar channel-nya).
 
-  - Di dalam channel-nya, kalau ingin mengirim pesan tanpa direspon Aika (kayak comment gitu), sertakan `,,` di awal pesan kalian.
+  - Di dalam channel-nya, kalau ingin mengirim pesan tanpa direspons Aika (kayak comment gitu), sertakan `,,` di awal pesan kalian.
 
   - Di samping fiturnya, tersedia juga command-command utilitas untuk chatbot-nya antara lain `memory_status` untuk ngecek kapasitas chat / ingatan Aika sama kalian, dan `reset_chat` buat ngehapus semua ingatan Aika tentangmu (ibarat kayak buat ulang chat baru).
 
@@ -224,4 +225,4 @@ Di titik ini, fungsi bot Aika masih sangat sederhana, yaitu sekedar ngisi channe
 
 Fungsi lainnya juga yaitu untuk membawa sosok maskot server makin dekat dengan kita dengan hadir di tengah-tengah member list, sekaligus untuk menggantikan posisi owner di dua channel tadi (karena pesan asli di situ terhapus gara-gara akun owner kena suspend sama Discord).
 
-Pada titik ini pula, bot Aika masih belum punya command apapun yang secara publik bisa diakses oleh para member server. Command yang ada yaitu cuma untuk nge-trigger dan ngirim pesan di dua channel di atas, dan command-command ini cuma terkunci untuk admin.
+Pada titik ini pula, bot Aika masih belum punya command apa pun yang secara publik bisa diakses oleh para member server. Command yang ada yaitu cuma untuk nge-trigger dan ngirim pesan di dua channel di atas, dan command-command ini cuma terkunci untuk admin.
