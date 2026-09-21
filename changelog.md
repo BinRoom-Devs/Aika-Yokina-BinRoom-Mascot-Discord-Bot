@@ -4,7 +4,14 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.7.1 - 21 Sept 2026
+## v2.7.2 - 21 Sept 2026
+### Perbaikan: 
+- API key-nya Groq untuk fitur chatbot gak sengaja ke-revoke anjim, untung ditegur sama member 😂
+
+- Pada logging, ditambahkan logic pembeda antara bot atau member saat ada yang keluar.
+
+
+## v2.7.1
 ### Perbaikan:
 - Sedikit bugfix di`info`: 
 

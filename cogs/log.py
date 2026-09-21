@@ -28,65 +28,74 @@ LOGO_DISCORD = "https://cdn.discordapp.com/attachments/863959650448703538/154192
 class ServerLogger(commands.Cog):
     def __init__(self, bot:commands.Bot) -> None:
         self.bot = bot
-        self._has_started = False
+        self._sudah_mulai = False
         self.bot.tree.on_error = self.on_app_command_error
         
-        self.data_file = os.path.join("data", "vc_duration.json")
-        self.voice_states: dict[int, datetime] = {}
-        self.streaming_states: dict[int, datetime] = {}
-        self.vc_empty_states: dict[int, datetime] = {}
+        self.file_data = os.path.join("data", "vc_duration.json")
+        self.status_vc: dict[int, datetime] = {}
+        self.status_live: dict[int, datetime] = {}
+        self.status_vc_kosong: dict[int, datetime] = {}
         
         self._dirty = False
         self.save_task.start()
     
     async def cog_load(self) -> None:
         await self._load_durations()
+        self._original_tree_error = self.bot.tree.on_error
+        self.bot.tree.on_error = self.on_app_command_error
+        if not self.save_task.is_running():
+            self.save_task.start()
     
-    def cog_unload(self) -> None:
+    async def cog_unload(self) -> None:
         self.save_task.cancel()
+        if self._original_tree_error is not None:
+            self.bot.tree.on_error = self._original_tree_error
+        
         try:
-            loop = asyncio.get_running_loop()
-            if loop.is_running():
-                loop.create_task(self._save_durations())
-                loop.create_task(self.kirim_log_shutdown())
-        except RuntimeError:
+            await self._save_durations()
+        except Exception:  # noqa: BLE001, S110
+            pass
+        
+        try:
+            await self.kirim_log_shutdown()
+        except Exception:  # noqa: BLE001, S110
             pass
     
     # ==========================================
     # PERSISTENSI DATA & LATAR BELAKANG
     # ==========================================
     async def _load_durations(self) -> None:
-        if not os.path.exists(self.data_file):
+        if not os.path.exists(self.file_data):
             return
         
         def _read() -> dict[str, Any]:
             try:
-                with open(self.data_file, "r", encoding="utf-8") as f:
+                with open(self.file_data, "r", encoding="utf-8") as f:
                     return json.load(f)
             except (json.JSONDecodeError, OSError):
                 return {}
         
         data = await asyncio.to_thread(_read)
-        for k, v in data.get("voice_states", {}).items():
-            self.voice_states[int(k)] = datetime.fromisoformat(v)
-        for k, v in data.get("streaming_states", {}).items():
-            self.streaming_states[int(k)] = datetime.fromisoformat(v)
-        for k, v in data.get("vc_empty_states", {}).items():
-            self.vc_empty_states[int(k)] = datetime.fromisoformat(v)
+        for k, v in data.get("status_vc", {}).items():
+            self.status_vc[int(k)] = datetime.fromisoformat(v)
+        for k, v in data.get("status_live", {}).items():
+            self.status_live[int(k)] = datetime.fromisoformat(v)
+        for k, v in data.get("status_vc_kosong", {}).items():
+            self.status_vc_kosong[int(k)] = datetime.fromisoformat(v)
     
     async def _save_durations(self) -> None:
         if not self._dirty:
             return
         
         data = {
-            "voice_states": {str(k): v.isoformat() for k, v in self.voice_states.items()},
-            "streaming_states": {str(k): v.isoformat() for k, v in self.streaming_states.items()},
-            "vc_empty_states": {str(k): v.isoformat() for k, v in self.vc_empty_states.items()},
+            "status_vc": {str(k): v.isoformat() for k, v in self.status_vc.items()},
+            "status_live": {str(k): v.isoformat() for k, v in self.status_live.items()},
+            "status_vc_kosong": {str(k): v.isoformat() for k, v in self.status_vc_kosong.items()},
         }
         
         def _write() -> None:
-            os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
-            with open(self.data_file, "w", encoding="utf-8") as f:
+            os.makedirs(os.path.dirname(self.file_data), exist_ok=True)
+            with open(self.file_data, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
         
         await asyncio.to_thread(_write)
@@ -170,6 +179,9 @@ class ServerLogger(commands.Cog):
         
         try:
             async for entry in guild.audit_logs(limit=5, action=action):
+                age = (discord.utils.utcnow() - entry.created_at).total_seconds()
+                if age > 15:
+                    continue
                 if target_id is None or (entry.target and entry.target.id == target_id):
                     return entry.user, entry.reason or "Tidak ada alasan"
         except (discord.HTTPException, discord.Forbidden):
@@ -201,8 +213,8 @@ class ServerLogger(commands.Cog):
     # ==========================================
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        if not self._has_started:
-            self._has_started = True
+        if not self._sudah_mulai:
+            self._sudah_mulai = True
             await self.kirim_log_lifecycle("🟢🌸 Aika Online", "Aika sudah online dan selesai proses inisialisasi.\nSiap melayani server!", 0x76AE58)
         else:
             await self.kirim_log_lifecycle("🔄🌸 Aika Tersambung Kembali", "Sambungan Aika sempat terputus dengan Discord.\nSekarang Aika sudah tersambung kembali!", 0x76AE58)
@@ -658,7 +670,7 @@ class ServerLogger(commands.Cog):
             
             alasan = f"gara2 __{reason}__" if reason != 'Tidak ada alasan' else ''
             container = discord.ui.Container(accent_color=discord.Color.red())
-            container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.mention} 😠🦵🏻"))
+            container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.global_name} {member.mention} 😠🦵🏻"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.Section(
                 discord.ui.TextDisplay(content=(
@@ -669,15 +681,21 @@ class ServerLogger(commands.Cog):
                 accessory=discord.ui.Thumbnail(media=member.display_avatar.url)
             ))
         else:
+            org_atw_bot = ''
+            if member.bot:
+                org_atw_bot = "🤖 Bot"
+            else:
+                org_atw_bot = "👤 Member"
+            
             embed = discord.Embed(
-                title="📤🚪👤 Member Keluar",
+                title=f"📤🚪{org_atw_bot} Keluar",
                 description=f"{member.mention} meninggalkan server.{str_durasi}",
                 color=discord.Color.red(),
                 timestamp=discord.utils.utcnow()
             )
             
             container = discord.ui.Container(accent_color=discord.Color.red())
-            container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.mention} 😿💔"))
+            container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.global_name} {member.mention} 😿💔"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.Section(
                 discord.ui.TextDisplay(content=(
@@ -929,11 +947,11 @@ class ServerLogger(commands.Cog):
         
         if before.channel != after.channel:
             if before.channel is None and after.channel:  # Join VC
-                self.voice_states[member.id] = discord.utils.utcnow()
+                self.status_vc[member.id] = discord.utils.utcnow()
                 self._dirty = True
                 
                 if len(after.channel.members) == 1:
-                    self.vc_empty_states[after.channel.id] = discord.utils.utcnow()
+                    self.status_vc_kosong[after.channel.id] = discord.utils.utcnow()
                 
                 embed = discord.Embed(
                     title="📥🔊 Masuk Voice Channel",
@@ -944,7 +962,7 @@ class ServerLogger(commands.Cog):
                 info_tambahan = f"VC ID: {after.channel.id}"
                 
             elif after.channel is None and before.channel:  # Leave VC
-                waktu_join = self.voice_states.pop(member.id, None)
+                waktu_join = self.status_vc.pop(member.id, None)
                 self._dirty = True
                 
                 str_durasi = ""
@@ -966,7 +984,7 @@ class ServerLogger(commands.Cog):
                 info_tambahan = f"VC ID: {before.channel.id}"
                 
                 if len(before.channel.members) == 0:  # VC empty
-                    waktu_mulai_vc = self.vc_empty_states.pop(before.channel.id, None)
+                    waktu_mulai_vc = self.status_vc_kosong.pop(before.channel.id, None)
                     str_durasi_vc = ""
                     if waktu_mulai_vc:
                         total_detik_vc = int((discord.utils.utcnow() - waktu_mulai_vc).total_seconds())
@@ -987,7 +1005,7 @@ class ServerLogger(commands.Cog):
             elif before.channel and after.channel:  # Move VC
                 self._dirty = True
                 if len(before.channel.members) == 0:
-                    waktu_mulai_vc = self.vc_empty_states.pop(before.channel.id, None)
+                    waktu_mulai_vc = self.status_vc_kosong.pop(before.channel.id, None)
                     str_durasi_vc = ""
                     if waktu_mulai_vc:
                         total_detik_vc = int((discord.utils.utcnow() - waktu_mulai_vc).total_seconds())
@@ -1007,7 +1025,7 @@ class ServerLogger(commands.Cog):
                     await channel.send(embed=temp_bubar)
                 
                 if len(after.channel.members) == 1:
-                    self.vc_empty_states[after.channel.id] = discord.utils.utcnow()
+                    self.status_vc_kosong[after.channel.id] = discord.utils.utcnow()
                 
                 embed = discord.Embed(
                     title="↔️🔊 Pindah Voice Channel",
@@ -1030,11 +1048,11 @@ class ServerLogger(commands.Cog):
         if before.self_stream != after.self_stream:
             str_durasi_strm = ""
             if after.self_stream:
-                self.streaming_states[member.id] = discord.utils.utcnow()
+                self.status_live[member.id] = discord.utils.utcnow()
                 state_text = "🎥 memulai screen sharing"
                 warna_role = discord.Color.green()
             else:
-                waktu_streaming = self.streaming_states.pop(member.id, None)
+                waktu_streaming = self.status_live.pop(member.id, None)
                 state_text = "🛑 menghentikan screen sharing."
                 warna_role = discord.Color.red()
                 if waktu_streaming:
@@ -1550,7 +1568,7 @@ class ServerLogger(commands.Cog):
         
         alasan = f"gara2 __{reason}__" if reason != 'Tidak ada alasan' else ''
         container = discord.ui.Container(accent_color=discord.Color.red())
-        container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {user.mention} 😠🔨"))
+        container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {user.global_name} {user.mention} 😠🔨"))
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.Section(
             discord.ui.TextDisplay(content=(

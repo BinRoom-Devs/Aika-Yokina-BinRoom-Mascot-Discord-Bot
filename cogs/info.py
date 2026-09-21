@@ -220,6 +220,14 @@ class Info(commands.Cog):
     def os(self) -> str:
         return platform.system()
     
+    async def emoji_aika(self) -> str:
+        app_emoji = await self.bot.fetch_application_emojis()
+        emoji_target = discord.utils.get(app_emoji, name="aikaboticonbulat")
+        if emoji_target:
+            return str(emoji_target)
+        else:
+            return "<:Aika_Yokina:1551065535091974276>"
+    
     async def hitung_latensi(
         self, ctx:commands.Context, 
         pesan_awal:discord.Message|None,
@@ -326,7 +334,8 @@ class Info(commands.Cog):
         
         container = discord.ui.Container(accent_color=0xD675C1)
         
-        judul = "### <:Aika_Yokina:1551065535091974276>  Informasi Lengkap Aika"
+        emoji_aika = await self.emoji_aika()
+        judul = f"### {emoji_aika}  Informasi Lengkap Aika"
         container.add_item(discord.ui.TextDisplay(content=judul))
         
         self.pemisah(container)

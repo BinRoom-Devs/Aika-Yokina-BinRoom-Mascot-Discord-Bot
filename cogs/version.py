@@ -6,7 +6,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-VERSI_AIKA = "v2.7.1"
+VERSI_AIKA = "v2.7.2"
 LINK_REPO = "https://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot"
 API_GITHUB = "https://api.github.com/repos/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot/commits/main"
 
