@@ -10,6 +10,9 @@ Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/
 
 - Pada logging, ditambahkan logic pembeda antara bot atau member saat ada yang keluar.
 
+### Penambahan:
+- Integrasi fitur bawaan Discord yang memungkinkan aplikasi/bot punya kontainer emojinya sendiri. Supaya gaperlu lagi minjam emoji dari server.
+
 
 ## v2.7.1
 ### Perbaikan:
