@@ -4,6 +4,54 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## v3.0.0 - 28 Sept 2026
+### Perubahan:
+- (Dalam kodingan) file-file cogs diatur dan dikategorikan dalam sub-folder.
+
+- (Dalam kodingan) Di `bot.py` metode pencarian jalur file utama absolut diubah dari `.parent.parent` jadi `.parents` doang, sekaligus mindahin tempat deklarasi token ke dalam `start_bot()`.
+
+- Ngubah semua nama command dari `snake_case` jadi `kebab-case`.
+
+- Nge-hide semua command-command admin/dev only.
+
+- Migrasi database total. 
+  - Sebelumnya, ada beberapa data yang pakai JSON walaupun udah ada SQLite. Sekarang dipindahin dan digabungin semuanya ke SQLite.
+
+  - Masih bagian dari migrasi database total, library `sqlite` + metode `threading.RLock` sekarang dialihkan ke `aiosqlite` biar fungsi asinkronisnya makin mantap.
+
+### Penambahan:
+- Akhirnya ni bot punya command `help` yang rapi dan custom... Command `help` nya mencakup command utama yang menampilkan seluruh command publiknya Aika, sekaligus sub-command yang bisa menampilkan detail tentang sebuah command (misalnya `ak!help pfp`).
+
+- Command-command utilitas baru!
+  - Fungsional bot: `status`/`uptime-status`: Kamu bisa intip status aktif Aika sekaligus riwayat gangguan koneksinya, apakah sempat down atau lancar-lancar aja.
+  
+  - Server dan Discord related: `userinfo`, `serverinfo`, `roleinfo`, `channelinfo`, `threadinfo`, dan `categoryinfo`.
+
+  - Tool utilitas lainnya: `frame`, bisa kamu pakai untuk mem-fetch avatar frame / decoration nya orang. Command ini kayak pendampingnya `avatar` sama `banner` gitu.
+
+- Fitur baru: kartu membership BinRoom!
+  - Fitur ini memungkinkan para member mencetak kartu keanggotaan/membership BinRoom. Di kartunya mencakup foto profil, nama, tanggal bergabung, nomor member, status anggota, ID-mu, dan kode QR yang mengarah ke link profilmu.
+
+  - Fitur ini juga disertai command untuk mengaksesnya:
+    - `membership`: Menampilkan kartu membership-mu. Kalau sebelumnya belum pernah, nanti bakal dibuatin sama Aika. (Bisa juga dipake ke orang lain. Contoh: `ak!membership @Daffa`).
+
+    - `membership customname`: Kalau kamu pengen nama kustom ketimbang nama akun Discord, pakai command ini. Contoh: `ak!membership customname Ilyas Hendika`. Bisa juga dipakai untuk menimpa nama kustom sebelumnya, caranya langsung eksekusi aja nama baru. Contoh, `ak!membership customname Orityles`
+
+    - `membership resetname`: Mau reset dan balik ke nama Discord semula? Eksekusi aja ini.
+
+
+### Perbaikan:
+- Beberapa bug di logging, statistik harian, dan chatbot AI diperbaiki.
+
+- Khususnya di fitur chatbot AI, sebelumnya, jika user sempat memakai fitur penalaran/reasoning, pesan-pesan non-reasoning selanjutnya juga akan menyedot token yang besar. Sekarang ini sudah diperbaiki, hore.
+
+- Ngerapiin penamaan file jadi `snake_case` semua biar patuh dengan ketentuan PEP 8-nya Python.
+
+### Penghapusan:
+- Logging perubahan username global dihilangkan, opt total ke perubahan username lokal/server.
+
+
 ## v2.7.2 - 21 Sept 2026
 ### Perbaikan: 
 - API key-nya Groq untuk fitur chatbot gak sengaja ke-revoke anjim, untung ditegur sama member 😂
@@ -16,7 +64,7 @@ Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/
 
 ## v2.7.1
 ### Perbaikan:
-- Sedikit bugfix di`info`: 
+- Sedikit bugfix di `info`: 
 
   - Ganti tulisan dari "Bahasa pemrograman" jadi "Bahasa program" biar lebih singkat.
   
@@ -174,13 +222,13 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
   - `banner`, buat nampilin foto sampul orang.
 
-  - `clear_cache` (khusus owner) buat ngebersihin bot Aika tanpa perlu restart.
+  - `clear-cache` (khusus owner) buat ngebersihin bot Aika tanpa perlu restart.
 
   - `restart` dan `shutdown` (khusus owner) buat nge-restart atau matiin bot tanpa harus utak-atik terminal.
 
 - Halaman web dashboard (khusus para admin) buat ngelola bot Aika!
 
-- Leaderboard Geometry Dash untuk para player GD BinRoom! Bisa dilihat di channel `#leaderboard` pada kategori `BinRoom GD` atau lewat command `binroom_gd_leaderboard`.
+- Leaderboard Geometry Dash untuk para player GD BinRoom! Bisa dilihat di channel `#leaderboard` pada kategori `BinRoom GD` atau lewat command `binroom-gd-leaderboard`.
 
 ### Perubahan:
 - Migrasi sistem database dari JSON ke SQLite.
@@ -208,7 +256,7 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
 ## v1.3.0 - 26 Agst 2026
 ### Penambahan:
-- Command baru: `cek_kuota_ai`: mirip dengan `ai_chatbot_stats` tapi yang ini lebih ringkas; cuma info kuotanya doang, gaada info tambahan/lengkap kayak berapa token yang kepake macam di command `ai_chatbot_stats`.
+- Command baru: `cek-kuota-ai`: mirip dengan `ai-chatbot-stats` tapi yang ini lebih ringkas; cuma info kuotanya doang, gaada info tambahan/lengkap kayak berapa token yang kepake macam di command `ai-chatbot-stats`.
 
 - Command `ping` ditambahin logic full-range RGB biar makin dinamis sama angka latensinya.
 
@@ -224,11 +272,11 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
 ## v1.2.0 - 24 Agst 2026
 ### Penambahan:
-- Command baru: `ai_chatbot_stats` biar bisa liat statistik penggunaan API dari Groq buat AI-nya Aika.
+- Command baru: `ai-chatbot-stats` biar bisa liat statistik penggunaan API dari Groq buat AI-nya Aika.
 
 - Sistem logging untuk para admin! Tersedia di channel khusus.
 
-- Command baru lainnya untuk utilitas: `about`, `stats`, `invite`, `source_code`, `snipe`, dan `uptime`.
+- Command baru lainnya untuk utilitas: `about`, `stats`, `invite`, `source-code`, `snipe`, dan `uptime`.
 
 
 ## v1.1.0 - 23 Agst 2026
@@ -239,7 +287,7 @@ Update besar-besaran untuk Aika! Setelah ngoding selama 2 minggu buat ngisi sisa
 
   - Di dalam channel-nya, kalau ingin mengirim pesan tanpa direspons Aika (kayak comment gitu), sertakan `,,` di awal pesan kalian.
 
-  - Di samping fiturnya, tersedia juga command-command utilitas untuk chatbot-nya antara lain `memory_status` untuk ngecek kapasitas chat / ingatan Aika sama kalian, dan `reset_chat` buat ngehapus semua ingatan Aika tentangmu (ibarat kayak buat ulang chat baru).
+  - Di samping fiturnya, tersedia juga command-command utilitas untuk chatbot-nya antara lain `memory-status` untuk ngecek kapasitas chat / ingatan Aika sama kalian, dan `reset_chat` buat ngehapus semua ingatan Aika tentangmu (ibarat kayak buat ulang chat baru).
 
 
 ## v1.0.0 - 20 Agst 2026

@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from nicegui import ui
 from nicegui.context import context
@@ -314,8 +316,8 @@ def render_chatbot_tab(bot: discord.Client):
         ui.label("Ubah origin story dan kontributor lore dari database SQLite.").classes("text-xs text-gray-400 -mt-2")
 
         try:
-            current_lore = database.get_lore()
-        except (database.DatabaseError, AttributeError, OSError) as e:
+            current_lore = asyncio.run(database.get_lore())
+        except (AttributeError, OSError, Exception) as e:  # noqa: BLE001
             state.log_event(f"[Dashboard] Gagal membaca lore SQLite: {e}")
             current_lore = {}
 
@@ -340,19 +342,16 @@ def render_chatbot_tab(bot: discord.Client):
 
         async def save_lore_settings():
             new_contribs = [c.strip() for c in contrib_input.value.split(";") if c.strip()]
-            updated_data = {
-                "original_illustrator": illustrator_input.value,
-                "origin_story": origin_input.value,
-                "contributors": new_contribs
-            }
+            original_illustrator = illustrator_input.value
+            origin_story = origin_input.value
 
             try:
-                database.save_lore(updated_data)
+                asyncio.run(database.save_lore(original_illustrator, origin_story, new_contribs))
                 
                 contrib_inline = "; ".join(new_contribs)
                 lore_formatted = (
-                    f"- SEJARAH: {updated_data['origin_story']}\n"
-                    f"- KREDIT: Visual oleh Owner ({updated_data['original_illustrator']}). "
+                    f"- SEJARAH: {origin_story}\n"
+                    f"- KREDIT: Visual oleh Owner ({original_illustrator}). "
                     f"Kontribusi member: [{contrib_inline}]. "
                     f"Jika ditanya spesifik siapa yang buat sifat/rambut/baju dsb., sebutkan nama member tersebut dengan bangga/santai."
                 )
@@ -374,7 +373,7 @@ def render_chatbot_tab(bot: discord.Client):
                 
                 state.log_event("[Dashboard] Lore Aika berhasil diperbarui di SQLite.")
                 ui.notify("Lore Aika berhasil disimpan dan diperbarui!", type="positive", color="pink")
-            except (database.DatabaseError, AttributeError, OSError) as e:
+            except (AttributeError, OSError, Exception) as e:  # noqa: BLE001
                 state.log_event(f"[Dashboard] Gagal menyimpan lore SQLite: {e}")
                 ui.notify("Gagal menyimpan lore ke database.", type="negative")
 

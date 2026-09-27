@@ -13,14 +13,11 @@ from dashboard.ui import state
 from dashboard.ui.dashboard import setup_dashboard
 from dashboard.ui.views.card import init_card_view
 
-database.init_db()
-
-DIREKTORI_UTAMA = Path(__file__).resolve().parent.parent
+DIREKTORI_UTAMA = Path(__file__).resolve().parent
 JALUR_ENV = DIREKTORI_UTAMA / ".env"
 load_dotenv(dotenv_path=JALUR_ENV, override=True)
 
 OWNER_ID = 1524951093560213638  # @arumugi_4405
-TOKEN = os.getenv("TOKEN_BOT")
 
 intents = discord.Intents.all()
 intents.messages = True
@@ -34,6 +31,9 @@ class AikaYokina(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
     
+    async def setup_hook(self) -> None:
+        await database.init_db()
+    
     async def interaction_check(self, interaction:discord.Interaction) -> bool:
         if interaction.guild is None and interaction.user.id != OWNER_ID:
             state.log_event("[Aika] Ada chat di DM. Aika langsung cegat.")
@@ -41,7 +41,7 @@ class AikaYokina(commands.Bot):
         return True
 
 
-aika = AikaYokina(command_prefix="ak!", intents=intents, case_insensitive=True)
+aika = AikaYokina(command_prefix="ak!", intents=intents, case_insensitive=True, help_command=None)
 
 
 @aika.check
@@ -98,6 +98,11 @@ async def start_bot():
     port = int(os.getenv("PORT", 16426))  # noqa: PLW1508
     protocol = "https" if os.path.exists("cert.pem") else "http"
     print(f"\n🌐 Dashboard live at: {protocol}://localhost:{port}\n")
+    
+    TOKEN = os.getenv("TOKEN_BOT")
+    if not TOKEN:
+        raise ValueError(f"[Aika] TOKEN_BOT tidak ditemukan! Dicek di jalur: {JALUR_ENV.absolute()}")
+    
     await load_cogs()
     asyncio.create_task(aika.start(TOKEN))
 

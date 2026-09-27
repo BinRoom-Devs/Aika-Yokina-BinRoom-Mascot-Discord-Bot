@@ -51,13 +51,13 @@ Aika punya fitur AI roleplay chatbot yang ditenagai oleh [Groq Qwen 3.6 27B](htt
 Berkat fitur Qwen 3.6 27B, Aika bisa merespons pesan teks dan gambar. Jika user menyertakan attachment ke dalam pesannya, Aika bisa memproses medianya dan membalas sesuai foto yang dikasih. Pendekatan ini sangat cocok untuk mereaksi pesan-pesan seperti memperlihatkan fan art ke Aika, atau screenshot gameplay, dll. 
 
 #### Command pada roleplay yang bisa digunakan (support prefiks `ak!` dan slash `/`):
-- `memory_status`: mengecek kapasitas memori Aika (ingatannya) tentangmu. 
+- `memory-status`: mengecek kapasitas memori Aika (ingatannya) tentangmu. 
 Dikarenakan keterbatasan varian gratisan dari Groq, Aika dibatasi hanya bisa menyimpan 24 pesan per orang. Jika kapasitas penuh, chat paling lama akan otomatis dihapus saat ada chat baru masuk.
 <div align="center" style="margin-left: 30px;">
 	<img src="media/memory_status.png" width="50%"/>
 </div>
 
-- `reset_memori`: menghapus seluruh riwayat percakapan dengan Aika
+- `reset-memori`: menghapus seluruh riwayat percakapan dengan Aika
 <div align="center" style="margin-left: 30px;">
 	<img src="media/reset_memory_conf.png" width="50%"/>
 </div>

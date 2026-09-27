@@ -1,8 +1,9 @@
 discord.py
-groq
-python-dotenv
-nicegui
 aiohttp
-pillow
-psutil
 aiosqlite
+python-dotenv
+psutil
+groq
+nicegui
+pillow
+qrcode
