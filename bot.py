@@ -63,10 +63,6 @@ async def on_ready():
     state.latency_ms = round(aika.latency * 1000)
     state.guild_count = len(aika.guilds)
     
-    await aika.change_presence(
-        status=discord.Status.dnd,
-        activity=discord.CustomActivity(name=state.bot_activity),
-    )
     state.log_event(f"🟢 {aika.user} sudah online.")
     
     if not update_bot_metrics.is_running():

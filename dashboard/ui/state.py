@@ -8,7 +8,6 @@ latency_ms: int = 0
 guild_count: int = 1
 latest_logs: list[str] = []
 
-
 def log_event(message: str):
     timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M:%S")
     formatted_entry = f"{timestamp} {message}"

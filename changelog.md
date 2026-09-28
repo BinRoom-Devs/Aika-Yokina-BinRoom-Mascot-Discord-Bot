@@ -4,6 +4,11 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v3.0.3 - 29 Sept 2026
+### Penambahan:
+- Ditambahkan countdown anniversary BinRoom, sekaligus kalimat ucapannya ke status kustomnya Aika.
+
+
 ## v3.0.2 - 28 Sept 2026
 ### Perbaikan:
 - Bug pada command `userinfo` untuk membaca status voice yang menyebabkan command jadi crash diperbaiki.
