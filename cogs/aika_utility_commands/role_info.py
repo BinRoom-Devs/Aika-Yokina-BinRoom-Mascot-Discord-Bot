@@ -107,15 +107,28 @@ class RoleInfo(commands.Cog):
             if perms.mention_everyone: key_perms.append("Mention @everyone")
             
             if key_perms:
-                text_perm = f"- **Izin kunci:** {', '.join(key_perms)}"
+                text_perm = f"- **Izin utama:** {', '.join(key_perms)}"
             else:
-                text_perm = "- **Izin kunci:** anggota biasa (tidak ada izin administratif khusus)"
+                text_perm = "- **Izin utama:** anggota biasa (tidak ada izin administratif khusus)"
         container.add_item(discord.ui.TextDisplay(content=text_perm))
         
         await ctx.send(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
+    
+    @role_info.error
+    async def role_info_error(self, ctx:commands.Context, error:commands.CommandError):
+        if isinstance(error, commands.MissingRequiredArgument) and error.param.name == "target_role":
+            await ctx.send("Masukin role yang pengen kamu liat infonya.\nContoh: `!roleinfo @Admin` atau `!roleinfo 123456789012345678`", ephemeral=True)
+            return
+        
+        if isinstance(error, commands.RoleNotFound):
+            await ctx.send("❌ Role yang kamu masukin gak ditemukan.", ephemeral=True)
+            return
+        
+        else:
+            raise error
 
 
 async def setup(bot:commands.Bot):

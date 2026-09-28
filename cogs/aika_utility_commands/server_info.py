@@ -28,13 +28,13 @@ class ServerInfo(commands.Cog):
                 "offline": str(e_offline) if e_offline else fallback["offline"],
             }
         except Exception as e:  # noqa: BLE001
-            print(f"⚠️ [Aika] Gagal mengambil application emojis: {e}", flush=True)
+            print(f"⚠️ [Aika] Gagal membaca application emojis: {e}", flush=True)
             return fallback
     
     @commands.hybrid_command(
         name="serverinfo",
         description="Menampilkan informasi lengkap dan statistik tentang server ini.",
-        aliases=["sinfo", "server", "guild", "guildinfo"]
+        aliases=["sinfo", "server", "guild", "guildinfo"],
     )
     @commands.guild_only()
     async def server_info(self, ctx:commands.Context):
@@ -64,7 +64,7 @@ class ServerInfo(commands.Cog):
             discord.VerificationLevel.low: "rendah (email terverifikasi)",
             discord.VerificationLevel.medium: "sedang (terdaftar lebih dari 5 menit)",
             discord.VerificationLevel.high: "tinggi (member lebih dari 10 menit)",
-            discord.VerificationLevel.highest: "sangat tinggi (no. HP terverifikasi)"
+            discord.VerificationLevel.highest: "sangat tinggi (no. HP terverifikasi)",
         }
         verif_str = verif_levels.get(guild.verification_level, str(guild.verification_level).title())
         
@@ -88,10 +88,12 @@ class ServerInfo(commands.Cog):
         ]
         if guild.description:
             bagian_1.insert(1, f"- **Deskripsi:** {guild.description}")
-        container.add_item(discord.ui.Section(
-            discord.ui.TextDisplay(content='\n'.join(bagian_1)),
-            accessory=discord.ui.Thumbnail(media=icon_url)
-        ))
+        container.add_item(
+            discord.ui.Section(
+                discord.ui.TextDisplay(content="\n".join(bagian_1)),
+                accessory=discord.ui.Thumbnail(media=icon_url),
+            )
+        )
         
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
@@ -100,7 +102,7 @@ class ServerInfo(commands.Cog):
             f"- **Total role:** `{len(guild.roles)}`",
             f"- **Total emoji & stiker:** `{len(guild.emojis)}` emoji, `{len(guild.stickers)}` stiker",
         ]
-        container.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_2)))
+        container.add_item(discord.ui.TextDisplay(content="\n".join(bagian_2)))
         
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
@@ -113,7 +115,7 @@ class ServerInfo(commands.Cog):
         if guild.afk_channel:
             bagian_3.append(f"- **Channel AFK:** {guild.afk_channel.mention} *(Timeout: {guild.afk_timeout // 60}m)*")
         
-        container.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_3)))
+        container.add_item(discord.ui.TextDisplay(content="\n".join(bagian_3)))
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         bagian_4 = [
@@ -121,29 +123,31 @@ class ServerInfo(commands.Cog):
             f"- **Batas bitrate voice:** `{guild.bitrate_limit // 1000} kbps`",
             f"- **Batas upload:** `{int(guild.filesize_limit / (1024 * 1024))} MB`",
         ]
-        container.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_4)))
+        container.add_item(discord.ui.TextDisplay(content="\n".join(bagian_4)))
         
         if guild.emojis:
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
-            emoji_list = [str(e) for e in guild.emojis]
-            display_text = f"**Daftar Emoji [{len(guild.emojis)}]:**\n# "
+            title = f"**Daftar Emoji [{len(guild.emojis)}]:**\n# "
+            max_emoji_chars = 950
             
-            emoji_str = " ".join(emoji_list)
+            truncated_emojis = []
+            current_len = 0
             
-            if len(display_text + emoji_str) > 3900:
-                truncated_emojis = []
-                current_len = len(display_text)
-                for e in emoji_list:
-                    if current_len + len(e) + 1 > 3850:
-                        break
-                    truncated_emojis.append(e)
-                    current_len += len(e) + 1
-                
-                sisa = len(guild.emojis) - len(truncated_emojis)
-                display_text += " ".join(truncated_emojis) + f" *(+{sisa} emoji lainnya)*"
+            for emoji in guild.emojis:
+                emoji_str = str(emoji)
+                if current_len + len(emoji_str) + 1 > max_emoji_chars:
+                    break
+                truncated_emojis.append(emoji_str)
+                current_len += len(emoji_str) + 1
+            
+            sisa = len(guild.emojis) - len(truncated_emojis)
+            emoji_body = " ".join(truncated_emojis)
+            
+            if sisa > 0:
+                display_text = f"{title}{emoji_body} *(+{sisa} emoji lainnya)*"
             else:
-                display_text += emoji_str
+                display_text = f"{title}{emoji_body}"
             
             container.add_item(discord.ui.TextDisplay(content=display_text))
         
@@ -160,7 +164,7 @@ class ServerInfo(commands.Cog):
         
         await ctx.send(
             view=discord.ui.LayoutView().add_item(container),
-            allowed_mentions=discord.AllowedMentions.none()
+            allowed_mentions=discord.AllowedMentions.none(),
         )
 
 

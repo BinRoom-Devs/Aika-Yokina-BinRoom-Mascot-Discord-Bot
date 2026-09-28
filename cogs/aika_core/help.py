@@ -179,8 +179,16 @@ class Help(commands.Cog):
         footer = f"-# Aika Yokina {version_prefix}Dibuat dengan Python dan discord.py  •  Dikembangkan oleh <@1524951093560213638>"
         container.add_item(TextDisplay(content=footer))
         
+        tombol = discord.ui.ActionRow(
+            discord.ui.Button(
+                label="Source code",
+                url="https://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot",
+                style=discord.ButtonStyle.link
+            ),
+        )
+        
         await ctx.send(
-            view=LayoutView().add_item(container),
+            view=LayoutView().add_item(container).add_item(tombol),
             allowed_mentions=AllowedMentions.none()
         )
 

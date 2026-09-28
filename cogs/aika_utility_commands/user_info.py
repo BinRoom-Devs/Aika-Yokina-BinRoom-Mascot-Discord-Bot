@@ -8,7 +8,7 @@ class UserInfo(commands.Cog):
         self.bot = bot
     
     async def baca_application_emojis(self) -> dict[str, str]:
-        """Fetch custom status dan badge emojis dari Developer Portal secara dinamis."""
+        """Fetch custom status, badge, dan voice state emojis dari Developer Portal secara dinamis."""
         fallback = {
             "online": "🟢",
             "idle": "🌙",
@@ -19,6 +19,13 @@ class UserInfo(commands.Cog):
             "hypesquad_bravery": "🛡️",
             "hypesquad_brilliance": "💎",
             "hypesquad_balance": "⚖️",
+            "server_muted": "🔇",
+            "server_deafen": "🔇",
+            "self_deafen": "🔇",
+            "screen_sharing": "🖥️",
+            "unmuted_speaking": "🎤",
+            "open_cam": "📹",
+            "self_muted": "🎤",
         }
         try:
             emojis = await self.bot.fetch_application_emojis()
@@ -36,6 +43,14 @@ class UserInfo(commands.Cog):
             e_brilliance = get_e("hypesquad_brilliance")
             e_balance = get_e("hypesquad_balance")
             
+            e_server_muted = get_e("server_muted")
+            e_server_deafen = get_e("server_deafen")
+            e_self_deafen = get_e("self_deafen")
+            e_screen_sharing = get_e("screen_sharing")
+            e_unmuted_speaking = get_e("unmuted_speaking")
+            e_open_cam = get_e("open_cam")
+            e_self_muted = get_e("self_muted")
+            
             return {
                 "online": str(e_online) if e_online else fallback["online"],
                 "idle": str(e_idle) if e_idle else fallback["idle"],
@@ -46,6 +61,13 @@ class UserInfo(commands.Cog):
                 "hypesquad_bravery": str(e_bravery) if e_bravery else fallback["hypesquad_bravery"],
                 "hypesquad_brilliance": str(e_brilliance) if e_brilliance else fallback["hypesquad_brilliance"],
                 "hypesquad_balance": str(e_balance) if e_balance else fallback["hypesquad_balance"],
+                "server_muted": str(e_server_muted) if e_server_muted else fallback["server_muted"],
+                "server_deafen": str(e_server_deafen) if e_server_deafen else fallback["server_deafen"],
+                "self_deafen": str(e_self_deafen) if e_self_deafen else fallback["self_deafen"],
+                "screen_sharing": str(e_screen_sharing) if e_screen_sharing else fallback["screen_sharing"],
+                "unmuted_speaking": str(e_unmuted_speaking) if e_unmuted_speaking else fallback["unmuted_speaking"],
+                "open_cam": str(e_open_cam) if e_open_cam else fallback["open_cam"],
+                "self_muted": str(e_self_muted) if e_self_muted else fallback["self_muted"],
             }
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ [Aika] Gagal mengambil application emojis: {e}", flush=True)
@@ -119,18 +141,18 @@ class UserInfo(commands.Cog):
         
         badge_list = []
         if target.public_flags.hypesquad_bravery:
-            badge_list.append(f"{app_emojis['hypesquad_bravery']} HypeSquad Bravery")
+            badge_list.append(f"{app_emojis['hypesquad_bravery']}")
         if target.public_flags.hypesquad_brilliance:
-            badge_list.append(f"{app_emojis['hypesquad_brilliance']} HypeSquad Brilliance")
+            badge_list.append(f"{app_emojis['hypesquad_brilliance']}")
         if target.public_flags.hypesquad_balance:
-            badge_list.append(f"{app_emojis['hypesquad_balance']} HypeSquad Balance")
+            badge_list.append(f"{app_emojis['hypesquad_balance']}")
         
         for flag, value in target.public_flags:
             if value and not flag.startswith("hypesquad"):
                 badge_list.append(f"🏅 {flag.replace('_', ' ').title()}")
         
         if badge_list:
-            bagian_1.append(f"- **Lencana publik:** {', '.join(badge_list)}")
+            bagian_1.append(f"- **Lencana publik:** {'  '.join(badge_list)}")
         
         container.add_item(discord.ui.Section(
             discord.ui.TextDisplay(content='\n'.join(bagian_1)),
@@ -153,22 +175,40 @@ class UserInfo(commands.Cog):
                     pass
             
             bagian_guild = [
-                f"- **Nickname Server:** {target.nick or 'Tidak ada'}",
-                f"- **Bergabung ke Server:** {joined_at}",
+                f"- **Nickname server:** {target.nick or 'Tidak ada'}",
+                f"- **Bergabung ke server:** {joined_at}",
                 f"- **Member keberapa bergabung:** {join_position}",
-                f"- **Role Tertinggi:** {target.top_role.mention if target.top_role else 'Tidak ada'}",
+                f"- **Role tertinggi:** {target.top_role.mention if target.top_role else 'tidak ada'}",
             ]
             
             if target.premium_since:
                 boosted_at = f"<t:{int(target.premium_since.timestamp())}:R>"
-                bagian_guild.append(f"- **Mulai Boost Server:** {boosted_at}")
+                bagian_guild.append(f"- **Mulai boost server:** {boosted_at}")
             
             if target.voice:
                 vc = target.voice.channel
-                vc_info = f"{vc.mention}"
-                if target.voice.self_mute or target.voice.mute: vc_info += " (Muted)"
-                if target.voice.self_deaf or target.voice.deaf: vc_info += " (Deafened)"
-                if target.voice.self_stream: vc_info += " (Live/Screen Share)"
+                vc_states = []
+                
+                if target.voice.server_mute:
+                    vc_states.append(app_emojis["server_muted"])
+                elif target.voice.self_mute:
+                    vc_states.append(app_emojis["self_muted"])
+                else:
+                    vc_states.append(app_emojis["unmuted_speaking"])
+                
+                if target.voice.server_deaf:
+                    vc_states.append(app_emojis["server_deafen"])
+                elif target.voice.self_deaf:
+                    vc_states.append(app_emojis["self_deafen"])
+                
+                if target.voice.self_stream:
+                    vc_states.append(app_emojis["screen_sharing"])
+                
+                if target.voice.self_video:
+                    vc_states.append(app_emojis["open_cam"])
+                
+                state_str = f" `{' '.join(vc_states)}`" if vc_states else ""
+                vc_info = f"{vc.mention} {state_str}"
                 bagian_guild.append(f"- **Sedang VC di:** {vc_info}")
             
             container.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_guild)))
@@ -180,9 +220,9 @@ class UserInfo(commands.Cog):
                 if isinstance(act, discord.CustomActivity):
                     emoji = f"{act.emoji} " if act.emoji else ""
                     if not act.name or act.name == "Custom Status":
-                        status_kustom = f"**Status Kustom:**\n## {emoji}\n"
+                        status_kustom = f"**Status kustom:**\n## {emoji}\n"
                     else:
-                        status_kustom = f"**Status Kustom:**\n> {emoji} {act.name}"
+                        status_kustom = f"**Status kustom:**\n> {emoji} {act.name}"
                     act_list.append(status_kustom)
                     
                 elif act.type == discord.ActivityType.playing or isinstance(act, discord.Game):
@@ -201,12 +241,9 @@ class UserInfo(commands.Cog):
                 elif act.type == discord.ActivityType.watching:
                     act_list.append(f"- **Menonton:** {act.name}")
             
-            if not act_list:
-                act_list.append("- **Aktivitas:** Tidak ada aktivitas aktif.")
-            
-            container.add_item(discord.ui.TextDisplay(content='\n'.join(act_list)))
-            
-            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            if act_list:
+                container.add_item(discord.ui.TextDisplay(content='\n'.join(act_list)))
+                container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
             roles = [r.mention for r in reversed(target.roles) if not r.is_default()]
             total_roles = len(roles)
@@ -215,26 +252,28 @@ class UserInfo(commands.Cog):
                 if total_roles > 8:
                     role_text += f" *(dan {total_roles - 8} role lainnya)*"
             else:
-                role_text = "- **Role:** Tidak memiliki role khusus."
+                role_text = "- **Role:** tidak memiliki role khusus."
             container.add_item(discord.ui.TextDisplay(content=role_text))
             
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
             perms = target.guild_permissions
             if perms.administrator:
-                perm_text = "- **Izin Kunci:** ⚠️ administrator (akses penuh server)"
+                perm_text = "- **Izin utama:** ⚠️ administrator (akses penuh server)"
             else:
                 key_perms = []
-                if perms.manage_guild: key_perms.append("Kelola Server")
-                if perms.manage_roles: key_perms.append("Kelola Role")
-                if perms.manage_channels: key_perms.append("Kelola Saluran")
-                if perms.kick_members or perms.ban_members: key_perms.append("Kick/Ban")
-                if perms.moderate_members: key_perms.append("Timeout")
-                if perms.manage_messages: key_perms.append("Kelola Pesan")
+                if perms.manage_guild: key_perms.append("kelola server")
+                if perms.manage_roles: key_perms.append("kelola role")
+                if perms.manage_channels: key_perms.append("kelola channel")
+                if perms.kick_members or perms.ban_members: key_perms.append("kick/ban")
+                if perms.moderate_members: key_perms.append("timeout")
+                if perms.manage_messages: key_perms.append("kelola pesan")
                 
-                perm_text = f"- **Izin Kunci:** {', '.join(key_perms)}" if key_perms else "- **Izin Kunci:** Anggota Biasa"
-            container.add_item(discord.ui.TextDisplay(content=perm_text))
-            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+                perm_text = f"- **Izin utama:** {', '.join(key_perms)}"
+            
+            if key_perms:
+                container.add_item(discord.ui.TextDisplay(content=perm_text))
+                container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         footer = f"-# {status_emoji}  {target.name} saat ini sedang {status_str}."
         container.add_item(discord.ui.TextDisplay(content=footer))

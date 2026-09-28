@@ -4,8 +4,30 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v3.0.1 - 28 Sept 2026
+### Perubahan:
+- Pada command `userinfo`:
+  - Jika orangnya lagi gak ada activity, field info-nya sekalian gabakal muncul.
 
-## v3.0.0 - 28 Sept 2026
+  - Kalau orangnya cuma member biasa, alias gaada izin khusus, field info-nya sekalian juga gabakal muncul. 
+
+  - Status VC-nya diubah dari teks jadi full emoji.
+
+- Pada command `serverinfo`, rincian daftar emoji server dipakaikan pembatas huruf biar command-nya gak crash.
+
+- Pada command `roleinfo`, ditambahkan handling kalau user gak ngasih role-nya.
+
+### Perbaikan:
+- Perbaikan penulisan dan huruf kapital.
+
+- Pada command `userinfo`, emoji badge udah dibenerin dan dipastikan bakal nampilin emoji badge nya.
+
+- Sedikit bugfix di command `sistem` karena dia sebelumnya gabisa ngebaca penggunaan disk ketimbang di command `info`.
+
+### Penambahan:
+- Ditambahin tombol `Source code` di comand `help`.
+
+## v3.0.0
 ### Perubahan:
 - (Dalam kodingan) file-file cogs diatur dan dikategorikan dalam sub-folder.
 

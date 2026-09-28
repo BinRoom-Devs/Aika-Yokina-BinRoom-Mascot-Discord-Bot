@@ -95,7 +95,6 @@ class ChannelInfo(commands.Cog):
             container.add_item(discord.ui.TextDisplay(content='\n'.join(kalau_vc)))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
-        
         if isinstance(ch, discord.ForumChannel):
             kalau_forum = []
             if ch.available_tags:
@@ -111,8 +110,8 @@ class ChannelInfo(commands.Cog):
                 kalau_forum.append(f"- **Pengurutan bawaan:** {pengurutan.get(ch.default_sort_order, 'default')}")
             if ch.default_layout:
                 layouts = {
-                    discord.ForumLayout.list_view: "daftar",
-                    discord.ForumLayout.grid_view: "galeri/kotak-kotak"
+                    discord.ForumLayoutType.list_view: "daftar",
+                    discord.ForumLayoutType.gallery_view: "galeri/kotak-kotak"
                 }
                 kalau_forum.append(f"- **Tata letak bawaan:** {layouts.get(ch.default_layout, 'default')}")
             

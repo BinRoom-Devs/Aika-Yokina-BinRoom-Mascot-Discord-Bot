@@ -60,9 +60,9 @@ def get_bot_directory_size_mb(jalur:str=".") -> float:
     try:
         for dirjalur, dirnames, filenames in os.walk(jalur):
             for f in filenames:
-                fp = os.jalur.join(dirjalur, f)
-                if not os.jalur.islink(fp):
-                    total_size += os.jalur.getsize(fp)
+                fp = os.path.join(dirjalur, f)
+                if not os.path.islink(fp):
+                    total_size += os.path.getsize(fp)
     except Exception:  # noqa: BLE001, S110
         pass
     return total_size / (1024 * 1024)
