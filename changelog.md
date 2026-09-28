@@ -4,7 +4,14 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v3.0.1 - 28 Sept 2026
+## v3.0.2 - 28 Sept 2026
+### Perbaikan:
+- Bug pada command `userinfo` untuk membaca status voice yang menyebabkan command jadi crash diperbaiki.
+
+- Sedikit perbaikan pada `serverinfo` yang menyebabkan tulisan "...lainnya" pada bagian emoji jadi ikutan besar gara-gara heading 1 nya Markdown.
+
+
+## v3.0.1
 ### Perubahan:
 - Pada command `userinfo`:
   - Jika orangnya lagi gak ada activity, field info-nya sekalian gabakal muncul.
@@ -22,7 +29,10 @@ Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/
 
 - Pada command `userinfo`, emoji badge udah dibenerin dan dipastikan bakal nampilin emoji badge nya.
 
+- Di command `userinfo` juga dihilangkan penanda code snippet (``) yang gak sengaja ternyata ngebungkus emoji status voice sekaligus sedikit bug fix.
+
 - Sedikit bugfix di command `sistem` karena dia sebelumnya gabisa ngebaca penggunaan disk ketimbang di command `info`.
+
 
 ### Penambahan:
 - Ditambahin tombol `Source code` di comand `help`.

@@ -128,7 +128,7 @@ class ServerInfo(commands.Cog):
         if guild.emojis:
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
-            title = f"**Daftar Emoji [{len(guild.emojis)}]:**\n# "
+            title = f"**Daftar emoji [{len(guild.emojis)}]:**\n"
             max_emoji_chars = 950
             
             truncated_emojis = []
@@ -145,9 +145,9 @@ class ServerInfo(commands.Cog):
             emoji_body = " ".join(truncated_emojis)
             
             if sisa > 0:
-                display_text = f"{title}{emoji_body} *(+{sisa} emoji lainnya)*"
+                display_text = f"{title}# {emoji_body} \n*(+{sisa} emoji lainnya)*"
             else:
-                display_text = f"{title}{emoji_body}"
+                display_text = f"{title}# {emoji_body}"
             
             container.add_item(discord.ui.TextDisplay(content=display_text))
         

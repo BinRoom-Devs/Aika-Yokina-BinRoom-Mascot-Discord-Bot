@@ -189,14 +189,14 @@ class UserInfo(commands.Cog):
                 vc = target.voice.channel
                 vc_states = []
                 
-                if target.voice.server_mute:
+                if target.voice.mute:
                     vc_states.append(app_emojis["server_muted"])
                 elif target.voice.self_mute:
                     vc_states.append(app_emojis["self_muted"])
                 else:
                     vc_states.append(app_emojis["unmuted_speaking"])
                 
-                if target.voice.server_deaf:
+                if target.voice.deaf:
                     vc_states.append(app_emojis["server_deafen"])
                 elif target.voice.self_deaf:
                     vc_states.append(app_emojis["self_deafen"])
@@ -207,7 +207,7 @@ class UserInfo(commands.Cog):
                 if target.voice.self_video:
                     vc_states.append(app_emojis["open_cam"])
                 
-                state_str = f" `{' '.join(vc_states)}`" if vc_states else ""
+                state_str = f" {' '.join(vc_states)}" if vc_states else ""
                 vc_info = f"{vc.mention} {state_str}"
                 bagian_guild.append(f"- **Sedang VC di:** {vc_info}")
             
@@ -258,6 +258,8 @@ class UserInfo(commands.Cog):
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
             perms = target.guild_permissions
+            perm_text = None
+            
             if perms.administrator:
                 perm_text = "- **Izin utama:** ⚠️ administrator (akses penuh server)"
             else:
@@ -269,9 +271,10 @@ class UserInfo(commands.Cog):
                 if perms.moderate_members: key_perms.append("timeout")
                 if perms.manage_messages: key_perms.append("kelola pesan")
                 
-                perm_text = f"- **Izin utama:** {', '.join(key_perms)}"
+                if key_perms:
+                    perm_text = f"- **Izin utama:** {', '.join(key_perms)}"
             
-            if key_perms:
+            if perm_text:
                 container.add_item(discord.ui.TextDisplay(content=perm_text))
                 container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
