@@ -1,4 +1,4 @@
-
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/2a50c1bf-f9f6-4850-a6af-a9ab035dc854" />
 # Aika Yokina, BinRoom Mascot Discord Bot
 
 ---
@@ -13,7 +13,7 @@
       		<img src="https://discord.com/api/guilds/904972136328888340/widget.png?style=banner3" alt="Discord Server Widget"/>
     	</td>
     	<td rowspan="2" align="center" valign="middle" style="border:none !important; padding=5px 0px 0px 0px;">
-      		<img src="http://de01.heavencloud.in:2058/api/card.svg" height="350" width="380px" style="object-fit:contain; border:none;" alt="Bot Status Card"/>
+      		<img src="http:/http://172.18.0.171:16426/api/card.svg" height="350" width="380px" style="object-fit:contain; border:none;" alt="Bot Status Card"/>
     	</td>
   	</tr>
   	<tr style="border:none !important;">
