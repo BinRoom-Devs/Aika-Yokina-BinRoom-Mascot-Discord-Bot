@@ -61,30 +61,29 @@ async def cari_warna_dominan(session:aiohttp.ClientSession, url:str) -> int:
 def format_jumboji(text: str) -> str:
     if not text: 
         return text
-
+    
     stripped = text.strip()
     if not stripped: 
         return text
-
+    
     emoji_kustom = DISCORD_EMOJI_RE.findall(stripped)
     text_no_custom = DISCORD_EMOJI_RE.sub('', stripped)
-
+    
     if any(char.isalnum() for char in text_no_custom): 
         return text
-
+    
     unicode_emojis = EMOJI_SINGLE_RE.findall(text_no_custom)
     text_no_emoji = EMOJI_SINGLE_RE.sub('', text_no_custom)
-
+    
     remaining_text = re.sub(r'\s+', '', text_no_emoji)
     is_emoji_only = not remaining_text
-
+    
     total_emoji_count = len(emoji_kustom) + len(unicode_emojis)
-
+    
     if is_emoji_only and 1 <= total_emoji_count <= 30 and not stripped.startswith('# '):
         return f'# {stripped}'
-
+    
     return text
-
 
 async def check_valid_cdn_url(session:aiohttp.ClientSession, url:str) -> bool:
     if url in CACHE_VALIDASI_CDN:
@@ -97,7 +96,6 @@ async def check_valid_cdn_url(session:aiohttp.ClientSession, url:str) -> bool:
     except (aiohttp.ClientError, asyncio.TimeoutError):
         CACHE_VALIDASI_CDN[url] = False
         return False
-
 
 class SnipeView(discord.ui.LayoutView):
     def __init__(self, ctx:commands.Context, snipes:list[dict], http_session:aiohttp.ClientSession):
@@ -134,7 +132,7 @@ class SnipeView(discord.ui.LayoutView):
             content_text = "*[Pesan gak berisi teks]*"
         
         author = sniped_data["author"]
-
+        
         # 1. Title & Text Content
         container.add_item(discord.ui.TextDisplay("### 🗑️ Pesan yang Baru Saja Dihapus (5 Menit Terakhir)"))
         container.add_item(discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
@@ -150,7 +148,7 @@ class SnipeView(discord.ui.LayoutView):
         files = []
         media_items = []
         file_components = []
-
+        
         if stickers:
             for st in stickers:
                 if isinstance(st, dict) and st.get("url"):
@@ -161,23 +159,23 @@ class SnipeView(discord.ui.LayoutView):
             if found_cdn_urls:
                 tasks = [check_valid_cdn_url(self.http_session, url) for url in found_cdn_urls[:MAX_ATTACHMENT_PER_PESAN]]
                 results = await asyncio.gather(*tasks)
-
+                
                 for url, is_valid in zip(found_cdn_urls, results):
                     if is_valid:
                         clean_url = url.split('?')[0].lower()
                         if clean_url.endswith(FORMAT_GAMBAR) or clean_url.endswith(FORMAT_VIDEO) or "/avatars/" in clean_url or "/emojis/" in clean_url:
                             media_items.append(discord.MediaGalleryItem(media=url))
-
+        
         if attachments:
             for idx, att in enumerate(attachments[:MAX_ATTACHMENT_PER_PESAN]):
                 filename = f"{idx + 1}_{att['filename']}" if len(attachments) > 1 else att['filename']
                 c_type = att.get("content_type") or ""
                 att_fn = att['filename'].lower()
                 is_spoiler = att.get("spoiler", False)
-
+                
                 is_img = c_type.startswith("image/") or att_fn.endswith(FORMAT_GAMBAR)
                 is_vid = c_type.startswith("video/") or att_fn.endswith(FORMAT_VIDEO)
-
+                
                 if att.get("bytes"):
                     bio = io.BytesIO(att["bytes"])
                     bio.seek(0)
@@ -187,25 +185,25 @@ class SnipeView(discord.ui.LayoutView):
                     media_target = att["url"]
                 else:
                     continue
-
+                
                 if is_img or is_vid:
                     media_items.append(discord.MediaGalleryItem(media=media_target, description=att['filename'], spoiler=is_spoiler))
                 else:
                     file_components.append(discord.ui.File(media_target))
-
+        
         if media_items:
             container.add_item(discord.ui.MediaGallery(*media_items[:MAX_ATTACHMENT_PER_PESAN]))
-
+        
         for fc in file_components:
             container.add_item(fc)
-
+        
         # 3. Footer / Additional Info
         container.add_item(discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(f"-# Dikirim pada pukul <t:{unix_ts}:T> (<t:{unix_ts}:R>)"))
-
+        
         # 4. Navigation Controls & Close Button
         row = discord.ui.ActionRow()
-
+        
         btn_prev = discord.ui.Button(
             label="◀",
             style=discord.ButtonStyle.primary,
@@ -213,14 +211,14 @@ class SnipeView(discord.ui.LayoutView):
             disabled=(self.current_page == 0)
         )
         btn_prev.callback = self.prev_callback
-
+        
         btn_ind = discord.ui.Button(
             label=f"{self.current_page+1}/{self.total_pages}",
             style=discord.ButtonStyle.secondary,
             custom_id="snipe_indicator",
             disabled=True
         )
-
+        
         btn_next = discord.ui.Button(
             label="▶",
             style=discord.ButtonStyle.primary,
@@ -228,29 +226,29 @@ class SnipeView(discord.ui.LayoutView):
             disabled=(self.current_page == self.total_pages-1)
         )
         btn_next.callback = self.next_callback
-
+        
         btn_close = discord.ui.Button(
             label="Tutup",
             style=discord.ButtonStyle.danger,
             custom_id="snipe_close"
         )
         btn_close.callback = self.close_callback
-
+        
         row.add_item(btn_prev)
         row.add_item(btn_ind)
         row.add_item(btn_next)
         row.add_item(btn_close)
         container.add_item(row)
-
+        
         self.add_item(container)
         return files
-
+    
     async def interaction_check(self, interaction:discord.Interaction) -> bool:
         if interaction.user.id != self.ctx.author.id:
             await interaction.response.send_message("Cuma yang ngetik command yang bisa ngatur tampilan ini ya! 💢", ephemeral=True)
             return False
         return True
-
+    
     async def _update_page(self, interaction:discord.Interaction):
         await interaction.response.defer()
         files = await self.setup_layout()
@@ -259,22 +257,22 @@ class SnipeView(discord.ui.LayoutView):
             await self.message.edit(attachments=files, view=self, allowed_mentions=discord.AllowedMentions.none())
         else:
             await interaction.edit_original_response(attachments=files, view=self, allowed_mentions=discord.AllowedMentions.none())
-
+    
     async def prev_callback(self, interaction:discord.Interaction):
         if self.current_page > 0:
             self.current_page -= 1
             await self._update_page(interaction)
-
+    
     async def next_callback(self, interaction:discord.Interaction):
         if self.current_page < self.total_pages - 1:
             self.current_page += 1
             await self._update_page(interaction)
-
+    
     async def close_callback(self, interaction:discord.Interaction):
         self.stop()
         #await interaction.response.defer()
         await interaction.message.delete()
-
+    
     async def on_timeout(self):
         for item in self.walk_children():
             if isinstance(item, discord.ui.Button):

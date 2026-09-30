@@ -3,6 +3,7 @@ import collections
 import json
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import aiosqlite
@@ -162,6 +163,16 @@ async def init_db() -> None:
                 custom_name TEXT,
                 join_number INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # 8. tabel streak harian member
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS streak_member (
+                user_id INTEGER PRIMARY KEY,
+                streak_skrg INTEGER DEFAULT 0,
+                streak_terlama INTEGER DEFAULT 0, 
+                terakhir_aktif TEXT
             )
         """)
     
@@ -708,3 +719,112 @@ async def delete_binroom_member(user_id: int) -> None:
             "DELETE FROM binroom_memberships WHERE user_id = ?",
             (user_id,)
         )
+
+
+# -----------------------------------------------------------------------------
+# Fitur Streak Harian Member
+# -----------------------------------------------------------------------------
+
+WIB = timezone(timedelta(hours=7))
+
+async def proses_streak_harian(user_id:int) -> dict[str, Any]:
+    """Ngeproses streak harian member sesuai zona waktu WIB.
+    
+    Mengembalikan dictionary berisi status update
+    (new_)"""
+    
+    wib_skrg = datetime.now(WIB)
+    str_hari_ini = wib_skrg.strftime("%Y-%m-%d")
+    str_kemarin = (wib_skrg - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    async with get_connection() as conn:
+        cursor = await conn.execute(
+            """
+            SELECT streak_skrg, streak_terlama, terakhir_aktif
+            FROM streak_member WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+        row = await cursor.fetchone()
+        
+        if not row:
+            #pertama kali
+            await conn.execute("""
+                INSERT INTO streak_member (user_id, streak_skrg, streak_terlama, terakhir_aktif)
+                VALUES (?, 1, 1, ?)
+                """,
+                (user_id, str_hari_ini),
+            )
+            return {
+                "status": "baru",
+                "streak_skrg": 1,
+                "streak_terlama": 1
+            }
+        
+        terakhir_aktif = row["terakhir_aktif"]
+        streak_skrg = row["streak_skrg"]
+        streak_terlama = row["streak_terlama"]
+        
+        if terakhir_aktif == str_hari_ini:
+            return {
+                "status": "sudah_masuk",
+                "streak_skrg": streak_skrg,
+                "streak_terlama": streak_terlama
+            }
+        
+        #nimbrung tiap hari -> naik streak
+        if terakhir_aktif == str_kemarin:
+            streak_skrg += 1
+            streak_terlama = max(streak_terlama, streak_skrg)
+            status = "streak_naik"
+        #lewat 1 hari -> reset
+        else:
+            streak_skrg = 1
+            status = "streak_reset"
+        
+        await conn.execute("""
+            UPDATE streak_member
+            SET streak_skrg = ?, streak_terlama = ?, terakhir_aktif = ?
+            WHERE user_id = ?
+        """, (streak_skrg, streak_terlama, str_hari_ini, user_id))
+        
+        return {
+            "status": status,
+            "streak_skrg": streak_skrg,
+            "streak_terlama": streak_terlama
+        }
+
+async def baca_streak_member(user_id:int) -> dict[str, Any]:
+    """Ngebaca data streak member.
+    Kalo kemarin gk aktif, streak-nya otomatis dianggap reset ke 0."""
+    
+    wib_skrg = datetime.now(WIB)
+    str_hari_ini = wib_skrg.strftime("%Y-%m-%d")
+    str_kemarin = (wib_skrg - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    async with get_connection() as conn:
+        cursor = await conn.execute("""
+            SELECT streak_skrg, streak_terlama, terakhir_aktif
+            FROM streak_member WHERE user_id = ?
+        """, (user_id,))
+        row = await cursor.fetchone()
+        
+        if not row:
+            return {
+                "streak_skrg": 0,
+                "streak_terlama": 0,
+                "terakhir_aktif": None
+            }
+        
+        terakhir_aktif = row["terakhir_aktif"]
+        streak_skrg = row["streak_skrg"]
+        
+        #klo gk aktif di hari ini atw kmarin, hangus
+        if terakhir_aktif not in (str_hari_ini, str_kemarin):
+            streak_skrg = 0
+        
+        return {
+            "streak_skrg": streak_skrg,
+            "streak_terlama": row["streak_terlama"],
+            "terakhir_aktif": terakhir_aktif
+        }

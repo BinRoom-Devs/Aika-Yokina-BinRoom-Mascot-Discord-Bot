@@ -4,6 +4,16 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v3.1.0 - 1 Okt 2026
+### Penambahan:
+- SISTEM STREAK! Sering2 nimbrung kalian di BinRoom, nanti streak harian kalian bakal naik. Absen sehari? Streak-mu hangus ygy. (Terinspirasi dari bot Kythia di Discord ID :DDDD)
+
+- Command utilitas baru! `stiker` dan `emoji`, buat nampilin emoji atau stiker yang kalian request ke Aika.
+
+### Perbaikan:
+- Bugfix dan perbaikan logic pada `daily_stats.py` supaya statistiknya akurat, sesuai, dan logic pelaporannya tiap tengah malam di channel logging khusus admin betulan bisa work.
+
+
 ## v3.0.3 - 29 Sept 2026
 ### Penambahan:
 - Ditambahkan countdown anniversary BinRoom, sekaligus kalimat ucapannya ke status kustomnya Aika.
