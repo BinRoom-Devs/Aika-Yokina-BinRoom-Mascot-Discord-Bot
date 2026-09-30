@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/2a50c1bf-f9f6-4850-a6af-a9ab035dc854" />
+
 # Aika Yokina, BinRoom Mascot Discord Bot
 
 ---
