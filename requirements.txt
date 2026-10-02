@@ -6,4 +6,5 @@ psutil
 groq
 nicegui
 pillow
+resvg-py
 qrcode

@@ -22,7 +22,7 @@ BULAN_INDONESIA = {
 
 
 class StatistikHarian(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot:commands.Bot):
         self.bot = bot
         self.data_stats = self._default_stats()
         self.vc_join_times: dict[int, datetime] = {}
@@ -105,10 +105,14 @@ class StatistikHarian(commands.Cog):
     
     async def _reset_statistik(self):
         self.data_stats = self._default_stats()
+        sekarang = datetime.now(timezone.utc)
+        for user_id in self.vc_join_times:
+            self.vc_join_times[user_id] = sekarang
+
         try:
             await database.reset_daily_stats()
         except Exception as e:  # noqa: BLE001
-            print(f"⚠️ [SQLite] Database Daily Stats: gagal reset ({e})", flush=True)
+            print(f"⚠️️ [SQLite] Database Daily Stats: gagal reset ({e})", flush=True)
     
     def _tambah_stat(self, key: str, value: int = 1):
         self.data_stats[key] += value
@@ -139,7 +143,7 @@ class StatistikHarian(commands.Cog):
         
         icon_url = guild.icon.url if guild and guild.icon else None
         
-        #bagian 1: aktivitas chat
+        # bagian 1: aktivitas chat
         poin_f1 = []
         if self.data_stats["pesan_dikirim"] > 0:
             poin_f1.append(f"• 💬 {self.data_stats['pesan_dikirim']} pesan dikirim")
@@ -157,7 +161,7 @@ class StatistikHarian(commands.Cog):
             ))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
-        #bagian 2: reaction & emoji
+        # bagian 2: reaction & emoji
         poin_f2 = []
         total_emoji = sum(self.data_stats["emoji_digunakan"].values())
         if total_emoji > 0:
@@ -171,7 +175,7 @@ class StatistikHarian(commands.Cog):
             container.add_item(discord.ui.TextDisplay(content=f"### Reaction dan emoji:\n{'\n'.join(poin_f2)}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
-        #bagian 3: keanggotaan
+        # bagian 3: keanggotaan
         poin_f3 = []
         if self.data_stats["member_bergabung"] > 0:
             poin_f3.append(f"• 📥 {self.data_stats['member_bergabung']} member bergabung")
@@ -196,7 +200,7 @@ class StatistikHarian(commands.Cog):
             container.add_item(discord.ui.TextDisplay(content=f"### Keanggotaan:\n{'\n'.join(poin_f3)}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
-        #bagian 4: aktivitas voice
+        # bagian 4: aktivitas voice
         poin_f4 = []
         if self.data_stats["vc_bergabung"] > 0:
             poin_f4.append(f"• 📥 {self.data_stats['vc_bergabung']} member bergabung di VC")
@@ -212,7 +216,7 @@ class StatistikHarian(commands.Cog):
             container.add_item(discord.ui.TextDisplay(content=f"### Aktivitas voice:\n{'\n'.join(poin_f4)}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
-        #bagian 5: aktivitas server
+        # bagian 5: aktivitas server
         poin_f5 = []
         if self.data_stats["channel_dibuat"] > 0:
             poin_f5.append(f"• #️⃣ {self.data_stats['channel_dibuat']} channel dibuat")
@@ -227,7 +231,7 @@ class StatistikHarian(commands.Cog):
         if self.data_stats["server_nama_diubah"] > 0:
             poin_f5.append(f"• 🏷️ {self.data_stats['server_nama_diubah']} nama server diubah")
         if self.data_stats["server_foto_diubah"] > 0:
-            poin_f5.append(f"• 🖼️️ {self.data_stats['server_foto_diubah']} foto server diubah")
+            poin_f5.append(f"• 🖼 {self.data_stats['server_foto_diubah']} foto server diubah")
         if self.data_stats["server_sampul_diubah"] > 0:
             poin_f5.append(f"• 🎨 {self.data_stats['server_sampul_diubah']} foto sampul server diubah")
         if self.data_stats["webhook_diubah"] > 0:
@@ -261,11 +265,11 @@ class StatistikHarian(commands.Cog):
         container.add_item(discord.ui.TextDisplay(content="-# Data ini dilaporkan kepada para admin server melalui channel logging dan aman bersama kami."))
         
         return container
-
+    
     # ==========================================
     # LISTENERS
     # ==========================================
-
+    
     @commands.Cog.listener()
     async def on_message(self, message:discord.Message):
         if not message.guild or message.author.bot:
@@ -318,6 +322,8 @@ class StatistikHarian(commands.Cog):
     async def on_user_update(self, before:discord.User, after:discord.User):
         if before.name != after.name:
             self._tambah_stat("member_ubah_username")
+        if before.avatar != after.avatar:
+            self._tambah_stat("member_ubah_foto_profil")
     
     @commands.Cog.listener()
     async def on_member_update(self, before:discord.Member, after:discord.Member):
@@ -339,12 +345,12 @@ class StatistikHarian(commands.Cog):
         sekarang = datetime.now(timezone.utc)
         
         if before.channel != after.channel:
-            #member masuk vc
+            # member masuk vc
             if before.channel is None and after.channel:
                 self.data_stats["vc_bergabung"] += 1
                 self.vc_join_times[member.id] = sekarang
                 
-            #member keluar vc
+            # member keluar vc
             elif after.channel is None and before.channel:
                 self.data_stats["vc_keluar"] += 1
                 waktu_join = self.vc_join_times.pop(member.id, None)
@@ -378,7 +384,7 @@ class StatistikHarian(commands.Cog):
             self._tambah_stat("role_pengaturan_diubah")
     
     @commands.Cog.listener()
-    async def on_guild_update(self, before:discord.Guild, after:discord.Guild):
+    async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
         if before.name != after.name:
             self.data_stats["server_nama_diubah"] += 1
         if before.icon != after.icon:
@@ -437,7 +443,7 @@ class StatistikHarian(commands.Cog):
         description="Menampilkan statistik server dalam sehari.",
         aliases=["stat", "statistik"]
     )
-    async def cmd_tampil_stats(self, ctx:commands.Context):
+    async def cmd_tampil_stats(self, ctx: commands.Context):
         sekarang = datetime.now(WIB)
         container = self._buat_container_laporan(ctx.guild, sekarang)
         await ctx.send(view=discord.ui.LayoutView().add_item(container))
@@ -447,7 +453,8 @@ class StatistikHarian(commands.Cog):
         """Menyimpan data statistik ke SQLite setiap 5 menit agar aman dari DB Lock."""
         await self._simpan_statistik_async()
     
-    @tasks.loop(time=time(hour=0, minute=0, second=0, tzinfo=WIB))
+    #hour 17 karna ini UTC, dan supaya di WIB jatuhnya 00.00
+    @tasks.loop(time=time(hour=17, minute=0, second=0, tzinfo=timezone.utc))
     async def tugas_laporan_harian(self):
         kemarin = datetime.now(WIB) - timedelta(days=1)
         

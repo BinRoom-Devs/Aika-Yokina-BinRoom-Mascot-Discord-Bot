@@ -168,18 +168,18 @@ def atur_row_leaderboard_gd(category_name:str, daftar_player:list[dict|tuple]) -
             continue
 
         player_data = item
-        stats = player_data.get("statistik", {})
+        stats = player_data.get("statistik") or {}
         mock_data = {
             "username": player_data.get("nama_user_gd", "Tidak Diketahui"),
             "accountID": player_data.get("account_id_gd", 0),
             "playerID": player_data.get("player_id_gd", 0),
-            "stars": stats.get("stars", 0),
-            "moons": stats.get("moons", 0),
-            "diamonds": stats.get("diamonds", 0),
-            "coins": stats.get("secret_coins", 0),
-            "userCoins": stats.get("user_coins", 0),
-            "demons": stats.get("demons", 0),
-            "cp": stats.get("creator_points", 0),
+            "stars": stats.get("stars", player_data.get("stars", 0)),
+            "moons": stats.get("moons", player_data.get("moons", 0)),
+            "diamonds": stats.get("diamonds", player_data.get("diamonds", 0)),
+            "coins": stats.get("secret_coins", player_data.get("secret_coins", 0)),
+            "userCoins": stats.get("user_coins", player_data.get("user_coins", 0)),
+            "demons": stats.get("demons", player_data.get("demons", 0)),
+            "cp": stats.get("creator_points", player_data.get("creator_points", 0)),
             "icon": player_data.get("icon", stats.get("icon", 1)),
             "col1": player_data.get("col1", player_data.get("color1", stats.get("color1", 0))),
             "col2": player_data.get("col2", player_data.get("color2", stats.get("color2", 0))),
@@ -248,7 +248,7 @@ async def baca_data_tunggal_player_async(session:aiohttp.ClientSession, player_d
                 data = await response.json()
                 obj_player = GDPlayer(data)
                 
-                player_dict["statistik"] = {
+                stats = {
                     "stars": obj_player.stars,
                     "moons": obj_player.moons,
                     "diamonds": obj_player.diamonds,
@@ -257,7 +257,9 @@ async def baca_data_tunggal_player_async(session:aiohttp.ClientSession, player_d
                     "demons": obj_player.demons,
                     "creator_points": obj_player.creatorPoints,
                 }
-
+                player_dict["statistik"] = stats
+                player_dict.update(stats)
+                
                 player_dict["icon"] = obj_player.icon
                 player_dict["col1"] = obj_player.color1
                 player_dict["col2"] = obj_player.color2
@@ -515,7 +517,7 @@ class TampilanRegistrasiContainer(discord.ui.View):
             description=(
                 f"Jumlah terdaftar di leaderboard BinRoom: **{jumlah_player}** player.\n"
                 f"Hanya top 20 ditampilkan. Namamu gak masuk? Semangat grinding-nya~\n\n"
-                f"Mau cek leaderboard selengkapnya? Gunakan `/binroom-gd-leaderboard` atau klik tombol di bawah.\n\n"
+                f"Mau cek leaderboard selengkapnya? Gunakan `/leaderboard gd` atau klik tombol di bawah.\n\n"
                 f"Mau join leaderboard BinRoom? Klik tombol **Daftarkan akunmu** di bawah."
             ),
             color=0xFFE700
@@ -960,15 +962,10 @@ class BinrumLeaderboard(commands.Cog):
 
         tugas_fetch = [fetch_with_semaphore(p) for p in daftar_id_player]
         hasil = await asyncio.gather(*tugas_fetch)
+        
+        _player_valid = [pair for pair in hasil if pair is not None]
 
-        updated_players = []
-        for obj, p_dict in hasil:
-            if obj is not None:
-                updated_count += 1
-            else:
-                failed_count += 1
-            updated_players.append(p_dict)
-
+        updated_players = [p_dict for _, p_dict in hasil]
         await simpan_daftar_player_async(updated_players)
         return updated_count, failed_count
 
@@ -992,10 +989,20 @@ class BinrumLeaderboard(commands.Cog):
                 return (obj, updated_dict) if obj is not None else None
 
         tugas_fetch = [fetch_with_semaphore(p) for p in daftar_id_player]
-        hasil = await asyncio.gather(*tugas_fetch)
-        player_valid = [pair for pair in hasil if pair is not None]
+        hasil = await asyncio.gather(*tugas_fetch, return_exceptions=True)
 
-        await simpan_daftar_player_async(daftar_id_player)
+        player_valid = []
+        updated_players_dict = []
+
+        for original_dict, res in zip(daftar_id_player, hasil):
+            if isinstance(res, tuple) and res[0] is not None:
+                player_obj, updated_dict = res
+                player_valid.append((player_obj, updated_dict))
+                updated_players_dict.append(updated_dict)
+            else:
+                updated_players_dict.append(original_dict)
+
+        await simpan_daftar_player_async(updated_players_dict)
 
         data_demons = sorted(player_valid, key=lambda pair: getattr(pair[0], "demons", 0), reverse=True)
         data_stars = sorted(player_valid, key=lambda pair: getattr(pair[0], "stars", 0), reverse=True)
@@ -1051,21 +1058,21 @@ class BinrumLeaderboard(commands.Cog):
             embed_reg = await reg_view.generate_embed_async()
             await channel_leaderboard.send(embed=embed_reg, view=reg_view)
             return
-
+        
         player_valid = []
         for p in daftar_db:
-            stats = p.get("statistik", {})
+            stats = p.get("statistik") or {}
             mock_data = {
                 "username": p.get("nama_user_gd", "Tidak Diketahui"),
                 "accountID": p.get("account_id_gd", 0),
                 "playerID": p.get("player_id_gd", 0),
-                "stars": stats.get("stars", 0),
-                "moons": stats.get("moons", 0),
-                "diamonds": stats.get("diamonds", 0),
-                "coins": stats.get("secret_coins", 0),
-                "userCoins": stats.get("user_coins", 0),
-                "demons": stats.get("demons", 0),
-                "cp": stats.get("creator_points", 0),
+                "stars": stats.get("stars", p.get("stars", 0)),
+                "moons": stats.get("moons", p.get("moons", 0)),
+                "diamonds": stats.get("diamonds", p.get("diamonds", 0)),
+                "coins": stats.get("secret_coins", p.get("secret_coins", 0)),
+                "userCoins": stats.get("user_coins", p.get("user_coins", 0)),
+                "demons": stats.get("demons", p.get("demons", 0)),
+                "cp": stats.get("creator_points", p.get("creator_points", 0)),
                 "icon": p.get("icon", stats.get("icon", 1)),
                 "col1": p.get("col1", p.get("color1", stats.get("color1", 0))),
                 "col2": p.get("col2", p.get("color2", stats.get("color2", 0))),
@@ -1154,31 +1161,12 @@ class BinrumLeaderboard(commands.Cog):
             await ctx.send(f"Gagal merender ulang leaderboard.\n`{e}`")
 
     @commands.hybrid_command(
-        name="binroom-gd-leaderboard",
-        description="Menampilkan leaderboard GD per kategori dengan navigasi paginasi dan tombol kategori.",
-        aliases=["gd-leaderboard", "leaderboard-gd"],
-        hidden=True
-    )
-    async def binroom_gd_leaderboard(self, ctx:commands.Context, category:str="stars"):
-        await ctx.defer(ephemeral=False)
-
-        normalized = normalisasi_kategori_gd(category)
-        if normalized not in META_KATEGORI_LEADERBOARD:
-            normalized = "stars"
-
-        daftar_player = await load_daftar_player_async()
-        view = GDLeaderboardCategoryView(self, daftar_player, normalized, timeout_seconds=180.0)
-        embed = view.build_embed()
-        pesan = await ctx.send(embed=embed, view=view)
-        view.message = pesan
-
-    @commands.hybrid_command(
         name="admin-daftar-leaderboard",
         description="Command admin untuk mendaftarkan player GD ke leaderboard secara manual.",
         hidden=True
     )
     @commands.has_permissions(administrator=True)
-    async def admin_register_gd(self, ctx:commands.Context, gd_username:str, discord_user:discord.User=None):
+    async def admin_register_gd(self, ctx: commands.Context, gd_username: str, discord_user: discord.User = None):
         await ctx.defer(ephemeral=False)
         nama_input = gd_username.strip()
 
@@ -1203,7 +1191,7 @@ class BinrumLeaderboard(commands.Cog):
             if id_discord:
                 player_ada["id_user_discord"] = id_discord
         else:
-            data_baru = {
+            data_player_baru = {
                 "nama_user_gd": nama_asli,
                 "account_id_gd": account_id,
                 "player_id_gd": player_id,
@@ -1213,37 +1201,45 @@ class BinrumLeaderboard(commands.Cog):
                     "secret_coins": 0, "user_coins": 0, "demons": 0, "creator_points": 0
                 }
             }
-            daftar_player.append(data_baru)
+            daftar_player.append(data_player_baru)
 
         await simpan_daftar_player_async(daftar_player)
+
+        # Refresh statistik player secara langsung dari API
+        p_target = next(p for p in daftar_player if p.get("account_id_gd") == account_id)
+        _, p_updated = await baca_data_tunggal_player_async(self.session, p_target)
         
-        info_discord = f" (Discord: <@{id_discord}>)" if id_discord else ""
-        embed_berhasil_daftar_manual = buat_embed_gd(
-            title="<:GD_complete:1543409457940267078> Berhasil",
-            description=f"**{nama_asli}**{info_discord} berhasil didaftarkan ke leaderboard",
+        # Simpan pembaruan data
+        daftar_player = [p_updated if p.get("account_id_gd") == account_id else p for p in daftar_player]
+        await simpan_daftar_player_async(daftar_player)
+
+        embed_sukses = buat_embed_gd(
+            title="<:GD_complete:1543409457940267078> Player Didaftarkan",
+            description=f"Berhasil mendaftarkan **{nama_asli}** ke leaderboard!",
             color=discord.Color.green()
         )
+        if id_discord:
+            embed_sukses.description += f"\nDiisikan ke akun Discord: <@{id_discord}>"
 
-        await ctx.send(embed=embed_berhasil_daftar_manual)
+        await ctx.send(embed=embed_sukses)
 
     @commands.hybrid_command(
-        name="admin-hapus-leaderboard",
-        description="Command admin untuk menghapus player dari leaderboard GD BinRoom.",        
-        aliases=["admin-remove-gd"],
+        name="admin-hapus-player",
+        description="Command admin untuk menghapus player GD dari leaderboard.",
         hidden=True
     )
     @commands.has_permissions(administrator=True)
-    async def admin_hapus_gd(self, ctx:commands.Context):
+    async def hapus_player_gd(self, ctx: commands.Context):
         await ctx.defer(ephemeral=True)
         daftar_player = await load_daftar_player_async()
-
+        
         if not daftar_player:
-            await ctx.send("<:GD_x:1543409414843662346> Data player di database kosong!", ephemeral=True)
+            await ctx.send("<:GD_x:1543409414843662346> Belum ada player terdaftar di leaderboard.", ephemeral=True)
             return
 
-        view_select = MenuPilihHapusPlayer(daftar_player, timeout_seconds=60.0)
-        pesan = await ctx.send(embed=view_select.get_content(), view=view_select, ephemeral=True)
-        view_select.pesan = pesan
+        menu_view = MenuPilihHapusPlayer(daftar_player, timeout_seconds=60.0)
+        pesan = await ctx.send(embed=menu_view.get_content(), view=menu_view, ephemeral=True)
+        menu_view.pesan = pesan
 
 
 async def setup(bot:commands.Bot):

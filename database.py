@@ -171,8 +171,11 @@ async def init_db() -> None:
             CREATE TABLE IF NOT EXISTS streak_member (
                 user_id INTEGER PRIMARY KEY,
                 streak_skrg INTEGER DEFAULT 0,
-                streak_terlama INTEGER DEFAULT 0, 
-                terakhir_aktif TEXT
+                streak_terlama INTEGER DEFAULT 0,
+                mulai_skrg TEXT,
+                terakhir_aktif TEXT,
+                mulai_terlama TEXT,
+                selesai_terlama TEXT
             )
         """)
     
@@ -478,16 +481,12 @@ async def upsert_gd_player(player_data: dict[str, Any]) -> None:
 
 async def save_all_gd_players(players: list[dict[str, Any]]) -> None:
     """Nge-batch upsert profilnya para player dan ngapus entry lama."""
-    
-    if not players:
-        async with get_connection() as conn:
-            await conn.execute("DELETE FROM gd_players")
-        return
-    
-    account_ids = [p["account_id_gd"] for p in players]
-    
     async with get_connection() as conn:
-        # Upsert all provided profiles in batch
+        if not players:
+            await conn.execute("DELETE FROM gd_players")
+            await conn.commit()
+            return
+        
         batch = [(
             p["account_id_gd"],
             p.get("nama_user_gd", ""),
@@ -530,10 +529,21 @@ async def save_all_gd_players(players: list[dict[str, Any]]) -> None:
                 updated_at = CURRENT_TIMESTAMP
         """, batch)
         
-        #hapus profil yang udah gaada dari database
-        placeholders = ",".join("?" for _ in account_ids)
-        query = f"DELETE FROM gd_players WHERE account_id_gd NOT IN ({placeholders})"
-        await conn.execute(query, account_ids)
+        # Hapus profil yang sudah tidak ada di list input
+        account_ids = [p["account_id_gd"] for p in players]
+        await conn.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS current_ids (id INTEGER PRIMARY KEY)"
+        )
+        await conn.execute("DELETE FROM current_ids")
+        await conn.executemany(
+            "INSERT INTO current_ids (id) VALUES (?)",
+            [(aid,) for aid in account_ids]
+        )
+        await conn.execute(
+            "DELETE FROM gd_players WHERE account_id_gd NOT IN (SELECT id FROM current_ids)"
+        )
+        await conn.execute("DROP TABLE IF EXISTS current_ids")
+        await conn.commit()
 
 
 async def get_all_gd_players() -> list[dict[str, Any]]:
@@ -616,6 +626,7 @@ async def reset_daily_stats() -> None:
     """Ngapus seluruh data statistik harian."""
     async with get_connection() as conn:
         await conn.execute("DELETE FROM daily_stats")
+        await conn.commit()
 
 
 # -----------------------------------------------------------------------------
@@ -727,84 +738,73 @@ async def delete_binroom_member(user_id: int) -> None:
 
 WIB = timezone(timedelta(hours=7))
 
-async def proses_streak_harian(user_id:int) -> dict[str, Any]:
-    """Ngeproses streak harian member sesuai zona waktu WIB.
-    
-    Mengembalikan dictionary berisi status update
-    (new_)"""
-    
-    wib_skrg = datetime.now(WIB)
-    str_hari_ini = wib_skrg.strftime("%Y-%m-%d")
-    str_kemarin = (wib_skrg - timedelta(days=1)).strftime("%Y-%m-%d")
-    
-    async with get_connection() as conn:
-        cursor = await conn.execute(
-            """
-            SELECT streak_skrg, streak_terlama, terakhir_aktif
-            FROM streak_member WHERE user_id = ?
-            """,
-            (user_id,),
-        )
-        row = await cursor.fetchone()
-        
-        if not row:
-            #pertama kali
-            await conn.execute("""
-                INSERT INTO streak_member (user_id, streak_skrg, streak_terlama, terakhir_aktif)
-                VALUES (?, 1, 1, ?)
-                """,
-                (user_id, str_hari_ini),
-            )
-            return {
-                "status": "baru",
-                "streak_skrg": 1,
-                "streak_terlama": 1
-            }
-        
-        terakhir_aktif = row["terakhir_aktif"]
-        streak_skrg = row["streak_skrg"]
-        streak_terlama = row["streak_terlama"]
-        
-        if terakhir_aktif == str_hari_ini:
-            return {
-                "status": "sudah_masuk",
-                "streak_skrg": streak_skrg,
-                "streak_terlama": streak_terlama
-            }
-        
-        #nimbrung tiap hari -> naik streak
-        if terakhir_aktif == str_kemarin:
-            streak_skrg += 1
-            streak_terlama = max(streak_terlama, streak_skrg)
-            status = "streak_naik"
-        #lewat 1 hari -> reset
-        else:
-            streak_skrg = 1
-            status = "streak_reset"
-        
-        await conn.execute("""
-            UPDATE streak_member
-            SET streak_skrg = ?, streak_terlama = ?, terakhir_aktif = ?
-            WHERE user_id = ?
-        """, (streak_skrg, streak_terlama, str_hari_ini, user_id))
-        
-        return {
-            "status": status,
-            "streak_skrg": streak_skrg,
-            "streak_terlama": streak_terlama
-        }
-
-async def baca_streak_member(user_id:int) -> dict[str, Any]:
-    """Ngebaca data streak member.
-    Kalo kemarin gk aktif, streak-nya otomatis dianggap reset ke 0."""
-    
+async def proses_streak_harian(user_id: int) -> dict[str, Any]:
     wib_skrg = datetime.now(WIB)
     str_hari_ini = wib_skrg.strftime("%Y-%m-%d")
     str_kemarin = (wib_skrg - timedelta(days=1)).strftime("%Y-%m-%d")
     
     async with get_connection() as conn:
         cursor = await conn.execute("""
-            SELECT streak_skrg, streak_terlama, terakhir_aktif
+            SELECT streak_skrg, streak_terlama, mulai_skrg, terakhir_aktif, mulai_terlama, selesai_terlama
+            FROM streak_member WHERE user_id = ?
+        """, (user_id,))
+        row = await cursor.fetchone()
+        
+        if not row:
+            #pertama kali
+            await conn.execute("""
+                INSERT INTO streak_member 
+                (user_id, streak_skrg, streak_terlama, mulai_skrg, terakhir_aktif, mulai_terlama, selesai_terlama)
+                VALUES (?, 1, 1, ?, ?, ?, ?)
+            """, (user_id, str_hari_ini, str_hari_ini, str_hari_ini, str_hari_ini))
+            await conn.commit()
+            return {"status": "streak_naik", "streak_skrg": 1}
+        
+        terakhir_aktif = row["terakhir_aktif"]
+        if terakhir_aktif == str_hari_ini:
+            return {"status": "sudah_masuk", "streak_skrg": row["streak_skrg"]}
+        
+        streak_skrg = row["streak_skrg"]
+        streak_terlama = row["streak_terlama"]
+        mulai_skrg = row["mulai_skrg"] or str_hari_ini
+        mulai_terlama = row["mulai_terlama"] or str_hari_ini
+        selesai_terlama = row["selesai_terlama"] or str_hari_ini
+        
+        if terakhir_aktif == str_kemarin: 
+            streak_skrg += 1 #lanjut
+            status = "streak_naik"
+        else:
+            streak_skrg = 1 #reset
+            mulai_skrg = str_hari_ini
+            status = "streak_reset"
+        
+        if streak_skrg > streak_terlama:
+            streak_terlama = streak_skrg
+            mulai_terlama = mulai_skrg
+            selesai_terlama = str_hari_ini
+        
+        await conn.execute("""
+            UPDATE streak_member
+            SET streak_skrg = ?,
+                streak_terlama = ?,
+                mulai_skrg = ?,
+                terakhir_aktif = ?,
+                mulai_terlama = ?,
+                selesai_terlama = ?
+            WHERE user_id = ?
+        """, (streak_skrg, streak_terlama, mulai_skrg, str_hari_ini, mulai_terlama, selesai_terlama, user_id))
+        await conn.commit()
+        
+        return {"status":status, "streak_skrg":streak_skrg}
+
+async def baca_streak_member(user_id: int) -> dict[str, Any]:
+    wib_skrg = datetime.now(WIB)
+    str_hari_ini = wib_skrg.strftime("%Y-%m-%d")
+    str_kemarin = (wib_skrg - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    async with get_connection() as conn:
+        cursor = await conn.execute("""
+            SELECT streak_skrg, streak_terlama, mulai_skrg, terakhir_aktif, mulai_terlama, selesai_terlama
             FROM streak_member WHERE user_id = ?
         """, (user_id,))
         row = await cursor.fetchone()
@@ -813,18 +813,66 @@ async def baca_streak_member(user_id:int) -> dict[str, Any]:
             return {
                 "streak_skrg": 0,
                 "streak_terlama": 0,
-                "terakhir_aktif": None
+                "mulai_skrg": None,
+                "mulai_terlama": None,
+                "selesai_terlama": None
             }
         
         terakhir_aktif = row["terakhir_aktif"]
         streak_skrg = row["streak_skrg"]
+        mulai_skrg = row["mulai_skrg"]
         
-        #klo gk aktif di hari ini atw kmarin, hangus
         if terakhir_aktif not in (str_hari_ini, str_kemarin):
             streak_skrg = 0
+            mulai_skrg = None
         
         return {
             "streak_skrg": streak_skrg,
             "streak_terlama": row["streak_terlama"],
-            "terakhir_aktif": terakhir_aktif
+            "mulai_skrg": mulai_skrg,
+            "mulai_terlama": row["mulai_terlama"],
+            "selesai_terlama": row["selesai_terlama"]
         }
+
+async def reset_streak_member(user_id: int) -> bool:
+    """Ngereset data streak harian member ke 0 dan menghapus catatan waktunya."""
+    async with get_connection() as conn:
+        cursor = await conn.execute("SELECT 1 FROM streak_member WHERE user_id = ?", (user_id,))
+        exists = await cursor.fetchone()
+        
+        if not exists:
+            return False
+            
+        await conn.execute("""
+            UPDATE streak_member
+            SET streak_skrg = 0,
+                streak_terlama = 0,
+                mulai_skrg = NULL,
+                terakhir_aktif = NULL,
+                mulai_terlama = NULL,
+                selesai_terlama = NULL
+            WHERE user_id = ?
+        """, (user_id,))
+        await conn.commit()
+        return True
+
+async def baca_leaderboard_streak(limit: int = 10) -> list[dict]:
+    """Mengambil list member dengan streak tertinggi (diurutkan berdasarkan streak_skrg desc)."""
+    async with get_connection() as conn:
+        cursor = await conn.execute("""
+            SELECT user_id, streak_skrg, streak_terlama
+            FROM streak_member
+            WHERE streak_skrg > 0
+            ORDER BY streak_skrg DESC, streak_terlama DESC
+            LIMIT ?
+        """, (limit,))
+        rows = await cursor.fetchall()
+        
+        return [
+            {
+                "user_id": row[0],
+                "streak_skrg": row[1],
+                "streak_terlama": row[2]
+            }
+            for row in rows
+        ]

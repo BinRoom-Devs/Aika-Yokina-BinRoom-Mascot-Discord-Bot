@@ -222,7 +222,7 @@ class AIPersona(commands.Cog):
         
         # Make a copy of the current chat context to avoid corrupting self.user_chats on failure
         chat_copy = list(chat)
-        chat_aika_terakhir_mem = chat_copy.pop()
+        _chat_aika_terakhir_mem = chat_copy.pop()
         dict_entri_terakhir_dari_user = chat_copy.pop()
         entri_terakhir_dari_user = dict_entri_terakhir_dari_user["content"]
         

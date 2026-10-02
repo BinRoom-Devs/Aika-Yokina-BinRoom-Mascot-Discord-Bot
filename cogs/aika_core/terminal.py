@@ -120,7 +120,7 @@ class LogTerminal(commands.Cog):
         pola_deteksi_eror = r"(Traceback|Error|Exception|KeyboardInterrupt|SystemExit|HTTPException|Forbidden|NotFound|400|401|403|404|429|500|\[Groq\]|Gagal|eror)" 
         
         if any(re.search(pola_deteksi_eror, baris, re.IGNORECASE) for baris in output_mentah): 
-            warna_cont = discord.Color.red() #ganti jadi merah kalo ada eror
+            warna_cont = 0xDD2E44 #ganti jadi merah kalo ada eror
         
         log_terformat = self.format_log_ansi("\n".join(output_mentah)) 
         

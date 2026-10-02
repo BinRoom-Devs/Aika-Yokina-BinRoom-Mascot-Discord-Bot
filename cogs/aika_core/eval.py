@@ -117,7 +117,7 @@ class Eval(commands.Cog):
             pesan_eror = f"{waduh.__class__.__name__}: {waduh}"
             ansi_err = self.format_log_ansi(pesan_eror)
             await ctx.message.add_reaction("❌")
-            return await self._kirim_container(ctx, ansi_err, warna=0xE56160)
+            return await self._kirim_container(ctx, ansi_err, warna=0xDD2E44)
         
         fungsi = env['func']
         subteks_footer = f"-# Python {sys.version} on {sys.platform}"
@@ -129,7 +129,7 @@ class Eval(commands.Cog):
             eror_mentahan = f"{stdout.getvalue()}{traceback.format_exc()}"
             ansi_err = self.format_log_ansi(eror_mentahan)
             await ctx.message.add_reaction("❌")
-            return await self._kirim_container(ctx, ansi_err, warna=0xE56160, footer=subteks_footer)
+            return await self._kirim_container(ctx, ansi_err, warna=0xDD2E44, footer=subteks_footer)
         
         nilai = stdout.getvalue()
         hasil = (nilai if nilai else '') if ret is None else (f"{nilai}{ret}" if nilai else str(ret))
@@ -142,7 +142,7 @@ class Eval(commands.Cog):
         
         if is_eror:
             str_hasil = self.format_log_ansi(str_hasil)
-            tag_bhs, warna = "ansi", 0xE56160
+            tag_bhs, warna = "ansi", 0xDD2E44
             await ctx.message.add_reaction("❌")
         else:
             tag_bhs, warna = "py", 0xD675C1
