@@ -72,6 +72,8 @@ class MemberStreak(commands.Cog):
         description="Mengecek streak nimbrung kamu atau member lain di BinRoom."
     )
     async def user(self, ctx:commands.Context, target:discord.Member|None=None):
+        target = target or ctx.author
+        
         if target.bot:
             await ctx.send("💢 Streak nimbrung tidak berlaku untuk bot.", ephemeral=True)
             return

@@ -4,7 +4,13 @@ Perubahan pada bot akan dicatat pada file ini.
 
 Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https//semver.org/spec/v2.0.0.html).
 
-## v3.2.0 - 3 Okt 2026
+
+## v3.2.1 - 3 Okt 2026
+### Perbaikan
+- Bugfix pada command `streak`, khususnya di logic pengecekan apakah orang atau bot.
+
+
+## v3.2.0
 ### Usang/*deprecated*
 - Web dashboard.
 
@@ -33,6 +39,8 @@ Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1
 
 ### Penambahan
 - Fitur streak kini ditambahkan command-command untuk mengaksesnya lebih lanjut `streak leaderboard`, `streak reset`, `streak user`.
+
+- Dua tombol pada command help: Changelog dan Build.
 
 
 ## v3.1.0 - 1 Okt 2026
