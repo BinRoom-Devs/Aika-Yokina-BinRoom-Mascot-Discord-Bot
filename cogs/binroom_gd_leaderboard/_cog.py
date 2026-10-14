@@ -1,4 +1,5 @@
 import asyncio
+from datetime import time, timedelta, timezone
 
 import aiohttp
 import discord
@@ -6,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from cogs.leaderboard_central import META_KATEGORI_LEADERBOARD, normalisasi_kategori_gd
+from config import pengaturan
 
 from ._config import GAMBAR_HEADER, ID_CHANNEL_LEADERBOARD
 from ._models import GDPlayer
@@ -129,7 +131,7 @@ class BinrumLeaderboard(commands.Cog):
                 data_player=data_demons,
                 kunci_stat="demons",
                 emoji_stat="<:hard_demon:1285063566742781984>",
-                warna_aksen=discord.Colour.red(),
+                warna_aksen=discord.Colour(pengaturan.warna_merah),
                 gambar_banner=GAMBAR_HEADER
             )
             await channel_leaderboard.send(view=view_demons)
@@ -207,7 +209,7 @@ class BinrumLeaderboard(commands.Cog):
                 data_player=data_demons,
                 kunci_stat="demons",
                 emoji_stat="<:hard_demon:1285063566742781984>",
-                warna_aksen=discord.Colour.red(),
+                warna_aksen=discord.Colour(pengaturan.warna_merah),
                 gambar_banner=GAMBAR_HEADER
             )
             await channel_leaderboard.send(view=view_demons)
@@ -238,7 +240,8 @@ class BinrumLeaderboard(commands.Cog):
         except discord.DiscordException as galat:
             print(f"[Aika] GD Leaderboard: gagal memperbarui tampilan lokal: {galat}")
     
-    @tasks.loop(hours=24)
+    WIB = timezone(timedelta(hours=7))
+    @tasks.loop(time=time(hour=0, minute=0, second=0, tzinfo=WIB))
     async def update_otomatis(self):
         await self.update_tampilan_leaderboard()
     
@@ -357,7 +360,7 @@ class BinrumLeaderboard(commands.Cog):
         embed_sukses = buat_embed_gd(
             title="<:GD_complete:1543409457940267078> Player Didaftarkan",
             description=f"Berhasil mendaftarkan **{nama_asli}** ke leaderboard!",
-            color=discord.Color.green()
+            color=discord.Color(pengaturan.warna_hijau)
         )
         if id_discord:
             embed_sukses.description += f"\nDiisikan ke akun Discord: <@{id_discord}>"

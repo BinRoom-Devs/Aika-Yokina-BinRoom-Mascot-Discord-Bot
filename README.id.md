@@ -5,7 +5,7 @@
 ## Instalasi
 
 ### Prasyarat
-- Python 3.10 atau lebih tinggi
+- Python 3.10 atau lebih tinggi (disarankan Python 3.12+)
 - Discord Bot Token
 - Groq API Key (untuk fitur AI)
 - Kredensial API Sightengine (untuk moderasi konten)

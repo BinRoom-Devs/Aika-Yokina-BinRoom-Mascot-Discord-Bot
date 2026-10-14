@@ -1,5 +1,7 @@
 """Berisi utilitas statis buat ngeproses gambar, bersihin regex, layout teks, dll."""
 
+import re
+
 import discord
 
 from ._config import (
@@ -9,8 +11,20 @@ from ._config import (
     UKURAN_FILE_MAKS_BYTES,
 )
 
+_LATEX_CONVERTER = None
 
-def proses_gambar(attachment:discord.Attachment) -> dict | None:
+def _get_latex_converter():
+    global _LATEX_CONVERTER
+    if _LATEX_CONVERTER is None:
+        from pylatexenc.latex2text import LatexNodes2Text
+        _LATEX_CONVERTER = LatexNodes2Text(
+            #keep_braces_around_math=False,
+            keep_inline_math=False,
+            keep_comments=False
+        )
+    return _LATEX_CONVERTER
+
+def proses_gambar(attachment: discord.Attachment) -> dict | None:
     if attachment.size > UKURAN_FILE_MAKS_BYTES:
         return None
     return {
@@ -35,7 +49,29 @@ def ekstrak_teksnya_doang(daftar_konten: list) -> str:
             kumpulan_teks.append("[User uploaded an image]")
     return " ".join(kumpulan_teks).strip()
 
-def masukin_ke_component_v2(raw_text:str) -> tuple[str, list[discord.ui.TextDisplay|discord.ui.Separator] | None, str]:
+def sanitasi_matematika(teks: str) -> str:
+    if not teks:
+        return ""
+    
+    try:
+        converter = _get_latex_converter()
+        teks_konversi = converter.latex_to_text(teks)
+    except Exception as e:  # noqa: BLE001
+        print(f"[pylatexenc] Sanitasi rumus matematika gagal: {e}")
+        teks_konversi = teks
+    
+    teks_konversi = re.sub(r'\$\$(.*?)\$\$', r'\1', teks_konversi, flags=re.DOTALL)
+    teks_konversi = re.sub(r'\$(.*?)\$', r'\1', teks_konversi)
+    
+    sub_map = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+    teks_konversi = re.sub(r'_([0-9])', lambda m: m.group(1).translate(sub_map), teks_konversi)
+    
+    teks_konversi = re.sub(r'(\|[^\n]+\|)', r'\1\n', teks_konversi)
+    teks_konversi = re.sub(r'\n{3,}', '\n\n', teks_konversi)
+    
+    return teks_konversi.strip()
+
+def masukin_ke_component_v2(raw_text: str) -> tuple[str, list[discord.ui.TextDisplay | discord.ui.Separator] | None, str]:
     kecocokan = RE_TAG_KONTEN.search(raw_text)
     if not kecocokan:
         return raw_text.strip(), None, ""

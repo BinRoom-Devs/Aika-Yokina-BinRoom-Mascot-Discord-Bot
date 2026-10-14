@@ -6,7 +6,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-VERSI_AIKA = "v3.2.1"
+VERSI_AIKA = "v3.3.0"
 LINK_REPO = "https://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot"
 API_GITHUB = "https://api.github.com/repos/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot/commits/main"
 
@@ -34,7 +34,7 @@ def baca_info_git():
             hash_commit = hash_panjang[:7]
             
             iso_date = data["commit"]["committer"]["date"]
-            dt = datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(iso_date)
             waktu_commit = int(dt.timestamp())
             
             return hash_commit, hash_panjang, waktu_commit

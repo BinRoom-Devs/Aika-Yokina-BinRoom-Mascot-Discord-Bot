@@ -4,7 +4,8 @@ from functools import lru_cache
 
 import discord
 from discord.ext import commands
-from PIL import Image, ImageSequence
+
+from config import pengaturan
 
 
 class Sticker(commands.Cog):
@@ -20,6 +21,8 @@ class Sticker(commands.Cog):
         - Ngehitung metadata ukuran gambar & total frame kalo animated
         - Ngegedein gambarnya (Upscaling)
         """
+        from PIL import Image, ImageSequence
+        
         try:
             with Image.open(io.BytesIO(byte_gambar)) as img:
                 lebar_asli, tinggi_asli = img.size
@@ -27,11 +30,18 @@ class Sticker(commands.Cog):
                 beranimasi = getattr(img, "is_animated", False) and total_frame > 1
                 format_gmbr = img.format if img.format else 'PNG'
                 
-                thumb = img.convert("RGB").resize((32, 32), Image.Resampling.NEAREST)
+                try:
+                    resample_nearest = Image.Resampling.NEAREST
+                    resample_bilinear = Image.Resampling.BILINEAR
+                except AttributeError:
+                    resample_nearest = Image.NEAREST
+                    resample_bilinear = Image.BILINEAR
+                
+                thumb = img.convert("RGB").resize((32, 32), resample_nearest)
                 quantized = thumb.quantize(colors=1)
                 palette = quantized.getpalette()
                 
-                warna = 0xD675C1 
+                warna = pengaturan.warna_aika 
                 if palette:
                     r, g, b = palette[:3]
                     warna = (r << 16) + (g << 8) + b
@@ -51,7 +61,7 @@ class Sticker(commands.Cog):
                     loop_asli = img.info.get('loop', 0)
                     
                     frames = [
-                        frame.convert('RGBA').resize(ukuran_baru, resample=Image.Resampling.NEAREST)
+                        frame.convert('RGBA').resize(ukuran_baru, resample=resample_nearest)
                         for frame in ImageSequence.Iterator(img)
                     ]
                     frames[0].save(
@@ -64,7 +74,7 @@ class Sticker(commands.Cog):
                         disposal=2
                     )
                 else:
-                    diperbesar = img.resize(ukuran_baru, resample=Image.Resampling.BILINEAR)
+                    diperbesar = img.resize(ukuran_baru, resample=resample_bilinear)
                     diperbesar.save(buffer_hasil, format=format_gmbr)
                 
                 buffer_hasil.seek(0)
@@ -73,7 +83,7 @@ class Sticker(commands.Cog):
         except (Image.UnidentifiedImageError, OSError, ValueError):
             pass
         
-        return 0xD675C1, 0, 0, False, 1, io.BytesIO(byte_gambar)
+        return pengaturan.warna_aika, 0, 0, False, 1, io.BytesIO(byte_gambar)
     
     async def proses_pembesaran(self, id_stiker:int, format_type:discord.StickerFormatType):
         if format_type == discord.StickerFormatType.gif:

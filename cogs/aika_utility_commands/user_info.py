@@ -1,96 +1,185 @@
+import asyncio
+import io
+
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
 
+import config
+
 
 class UserInfo(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot:commands.Bot):
         self.bot = bot
+        self._session: aiohttp.ClientSession | None = None
+    
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10))
+        return self._session
+    
+    async def cog_unload(self):
+        if self._session and not self._session.closed:
+            await self._session.close()
     
     async def baca_application_emojis(self) -> dict[str, str]:
-        """Fetch custom status, badge, dan voice state emojis dari Developer Portal secara dinamis."""
         fallback = {
-            "online": "🟢",
-            "idle": "🌙",
-            "dnd": "⛔",
-            "offline": "⚪",
-            "streaming": "🟣",
-            "mobile": "📱",
-            "hypesquad_bravery": "🛡️",
-            "hypesquad_brilliance": "💎",
-            "hypesquad_balance": "⚖️",
-            "server_muted": "🔇",
-            "server_deafen": "🔇",
-            "self_deafen": "🔇",
-            "screen_sharing": "🖥️",
-            "unmuted_speaking": "🎤",
-            "open_cam": "📹",
+            "online": "🟢", "idle": "🌙", "dnd": "⛔", "offline": "⚪",
+            "streaming": "🟣", "mobile": "📱", "hypesquad_bravery": "🛡️",
+            "hypesquad_brilliance": "💎", "hypesquad_balance": "⚖️",
+            "server_muted": "🔇", "server_deafen": "🔇", "self_deafen": "🔇",
+            "screen_sharing": "🖥️", "unmuted_speaking": "🎤", "open_cam": "📹",
             "self_muted": "🎤",
         }
         try:
             emojis = await self.bot.fetch_application_emojis()
-            
             get_e = lambda name: discord.utils.get(emojis, name=name)
-            
-            e_online = get_e("available_online")
-            e_idle = get_e("idle")
-            e_dnd = get_e("do_not_disturb")
-            e_offline = get_e("offline_or_invisible")
-            e_stream = get_e("streaming")
-            e_mobile = get_e("online_mobile")
-            
-            e_bravery = get_e("hypesquad_bravery")
-            e_brilliance = get_e("hypesquad_brilliance")
-            e_balance = get_e("hypesquad_balance")
-            
-            e_server_muted = get_e("server_muted")
-            e_server_deafen = get_e("server_deafen")
-            e_self_deafen = get_e("self_deafen")
-            e_screen_sharing = get_e("screen_sharing")
-            e_unmuted_speaking = get_e("unmuted_speaking")
-            e_open_cam = get_e("open_cam")
-            e_self_muted = get_e("self_muted")
-            
             return {
-                "online": str(e_online) if e_online else fallback["online"],
-                "idle": str(e_idle) if e_idle else fallback["idle"],
-                "dnd": str(e_dnd) if e_dnd else fallback["dnd"],
-                "offline": str(e_offline) if e_offline else fallback["offline"],
-                "streaming": str(e_stream) if e_stream else fallback["streaming"],
-                "mobile": str(e_mobile) if e_mobile else fallback["mobile"],
-                "hypesquad_bravery": str(e_bravery) if e_bravery else fallback["hypesquad_bravery"],
-                "hypesquad_brilliance": str(e_brilliance) if e_brilliance else fallback["hypesquad_brilliance"],
-                "hypesquad_balance": str(e_balance) if e_balance else fallback["hypesquad_balance"],
-                "server_muted": str(e_server_muted) if e_server_muted else fallback["server_muted"],
-                "server_deafen": str(e_server_deafen) if e_server_deafen else fallback["server_deafen"],
-                "self_deafen": str(e_self_deafen) if e_self_deafen else fallback["self_deafen"],
-                "screen_sharing": str(e_screen_sharing) if e_screen_sharing else fallback["screen_sharing"],
-                "unmuted_speaking": str(e_unmuted_speaking) if e_unmuted_speaking else fallback["unmuted_speaking"],
-                "open_cam": str(e_open_cam) if e_open_cam else fallback["open_cam"],
-                "self_muted": str(e_self_muted) if e_self_muted else fallback["self_muted"],
+                k: str(get_e(v)) if get_e(v) else fallback[k]
+                for k, v in {
+                    "online": "available_online", "idle": "idle", "dnd": "do_not_disturb",
+                    "offline": "offline_or_invisible", "streaming": "streaming", "mobile": "online_mobile",
+                    "hypesquad_bravery": "hypesquad_bravery", "hypesquad_brilliance": "hypesquad_brilliance",
+                    "hypesquad_balance": "hypesquad_balance", "server_muted": "server_muted",
+                    "server_deafen": "server_deafen", "self_deafen": "self_deafen",
+                    "screen_sharing": "screen_sharing", "unmuted_speaking": "unmuted_speaking",
+                    "open_cam": "open_cam", "self_muted": "self_muted",
+                }.items()
             }
-        except Exception as e:  # noqa: BLE001
-            print(f"⚠️ [Aika] Gagal mengambil application emojis: {e}", flush=True)
+        except Exception:  # noqa: BLE001
             return fallback
+    
+    @staticmethod
+    def _gabung_avatar_frame_blocking(avatar_bytes: bytes, frame_bytes: bytes | None) -> tuple[bytes, str]:
+        from PIL import Image, ImageDraw
+        
+        canvas_size = 256
+        avatar_size = int(canvas_size * 0.78)
+        offset = (canvas_size - avatar_size) // 2
+        
+        mask = Image.new("L", (avatar_size, avatar_size), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+        
+        try:
+            with Image.open(io.BytesIO(avatar_bytes)) as avatar_img:
+                avatar_animated = getattr(avatar_img, "is_animated", False)
+                avatar_n_frames = getattr(avatar_img, "n_frames", 1) if avatar_animated else 1
+                avatar_duration = avatar_img.info.get('duration', 40)
+                
+                frame_animated = False
+                frame_n_frames = 1
+                frame_duration = 40
+                frame_img = None
+                
+                if frame_bytes:
+                    try:
+                        frame_img = Image.open(io.BytesIO(frame_bytes))
+                        frame_animated = getattr(frame_img, "is_animated", False)
+                        frame_n_frames = getattr(frame_img, "n_frames", 1) if frame_animated else 1
+                        frame_duration = frame_img.info.get('duration', 40)
+                    except Exception:  # noqa: BLE001
+                        frame_img = None
+                
+                if not avatar_animated and not frame_animated:
+                    avatar = avatar_img.convert("RGBA").resize((avatar_size, avatar_size), Image.Resampling.LANCZOS)
+                    base = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+                    base.paste(avatar, (offset, offset), mask)
+                    
+                    if frame_img:
+                        with frame_img.convert("RGBA") as f_img:
+                            f_img = f_img.resize((canvas_size, canvas_size), Image.Resampling.LANCZOS)
+                            base.paste(f_img, (0, 0), f_img)
+                        frame_img.close()
+                    
+                    output = io.BytesIO()
+                    base.save(output, format="PNG")
+                    output.seek(0)
+                    return output.read(), "avatar_frame.png"
+                
+                total_frames = max(avatar_n_frames, frame_n_frames)
+                duration = max(avatar_duration, frame_duration)
+                frames_output = []
+                
+                for i in range(total_frames):
+                    base = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+                    
+                    if avatar_animated:
+                        avatar_img.seek(i % avatar_n_frames)
+                    curr_avatar = avatar_img.convert("RGBA").resize((avatar_size, avatar_size), Image.Resampling.BILINEAR)
+                    
+                    avatar_masked = Image.new("RGBA", (avatar_size, avatar_size), (0, 0, 0, 0))
+                    avatar_masked.paste(curr_avatar, (0, 0), mask)
+                    
+                    base.paste(avatar_masked, (offset, offset), avatar_masked)
+                    
+                    if frame_img:
+                        if frame_animated:
+                            frame_img.seek(i % frame_n_frames)
+                        curr_frame = frame_img.convert("RGBA").resize((canvas_size, canvas_size), Image.Resampling.BILINEAR)
+                        base.paste(curr_frame, (0, 0), curr_frame)
+                    
+                    p_frame = base.convert("P", palette=Image.Palette.ADAPTIVE, colors=255)
+                    mask_transparan = base.split()[3].point(lambda p: 255 if p < 128 else 0)
+                    p_frame.paste(255, mask_transparan)
+                    
+                    frames_output.append(p_frame)
+                
+                if frame_img:
+                    frame_img.close()
+                
+                output = io.BytesIO()
+                if frames_output:
+                    frames_output[0].save(
+                        output,
+                        format="GIF",
+                        save_all=True,
+                        append_images=frames_output[1:],
+                        duration=duration,
+                        loop=0,
+                        transparency=255,
+                        disposal=2
+                    )
+                output.seek(0)
+                return output.read(), "avatar_frame.gif"
+        except Exception:  # noqa: BLE001
+            return avatar_bytes, "avatar.png"
+    
+    async def _unduh_bytes(self, url: str) -> bytes | None:
+        try:
+            async with self.session.get(url) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+        except Exception:  # noqa: BLE001, S110
+            pass
+        return None
     
     @commands.hybrid_command(
         name="userinfo",
         description="Nampilin informasi lengkap tentang akun seseorang.",
-        aliases=["uinfo", "user", "pengguna", "whois"]
+        aliases=["uinfo", "whois"]
     )
-    @app_commands.describe(target_user="Pengguna yang ingin diperiksa (Default: diri sendiri)")
+    @app_commands.describe(target_user="User yang ingin diperiksa (Default: diri sendiri)")
     async def user_info(
         self,
         ctx: commands.Context,
         target_user: discord.Member | discord.User | None = None
     ):
-        target = target_user or ctx.author
+        await ctx.defer()
         
+        target = target_user or ctx.author
         if ctx.guild and isinstance(target, discord.User):
             target = ctx.guild.get_member(target.id) or target
         
-        is_member = isinstance(target, discord.Member)
+        if not hasattr(target, "avatar_decoration") or target.avatar_decoration is None:
+            try:
+                target = await self.bot.fetch_user(target.id)
+            except discord.HTTPException:
+                pass
         
+        is_member = isinstance(target, discord.Member)
         app_emojis = await self.baca_application_emojis()
         
         status_str = "__offline/invisible__"
@@ -112,24 +201,27 @@ class UserInfo(commands.Cog):
             elif target.mobile_status != discord.Status.offline and target.desktop_status == discord.Status.offline:
                 status_emoji = app_emojis["mobile"]
                 status_str = "__online di perangkat mobile__"
-            elif target.status == discord.Status.dnd:
-                status_str = "dalam __mode jangan ganggu (DND)__"
-            elif target.status == discord.Status.idle:
-                status_str = "__idling__"
         
-        accent = target.accent_color.value if getattr(target, 'accent_color', None) else 0xDE82CF
+        accent = target.accent_color.value if getattr(target, 'accent_color', None) else config.pengaturan.warna_aika
         if is_member and target.top_role and target.top_role.color.value != 0:
             accent = target.top_role.color.value
         
         container = discord.ui.Container(accent_color=accent)
-        
-        header_1 = f"### {'👤' if not target.bot else '🤖'}  Informasi {'Pengguna' if not target.bot else 'Bot'} — {target.mention}"
+        header_1 = f"### {'👤' if not target.bot else '🤖'}  Informasi {'User' if not target.bot else 'Bot'} — {target.mention}"
         container.add_item(discord.ui.TextDisplay(content=header_1))
-        
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         created_at = f"<t:{int(target.created_at.timestamp())}:R> (<t:{int(target.created_at.timestamp())}:F>)"
-        avatar_url = target.display_avatar.url
+        
+        avatar_obj = target.display_avatar
+        avatar_url = avatar_obj.with_size(4096).url
+        
+        decoration = getattr(target, "avatar_decoration", None)
+        decoration_url = decoration.with_size(4096).url if decoration else None
+        
+        container_sementara = discord.ui.Container(accent_color=accent)
+        container_sementara.add_item(discord.ui.TextDisplay(content=header_1))
+        container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         bagian_1 = [
             f"- **Username:** __{target.name}__",
@@ -140,12 +232,9 @@ class UserInfo(commands.Cog):
         ]
         
         badge_list = []
-        if target.public_flags.hypesquad_bravery:
-            badge_list.append(f"{app_emojis['hypesquad_bravery']}")
-        if target.public_flags.hypesquad_brilliance:
-            badge_list.append(f"{app_emojis['hypesquad_brilliance']}")
-        if target.public_flags.hypesquad_balance:
-            badge_list.append(f"{app_emojis['hypesquad_balance']}")
+        if target.public_flags.hypesquad_bravery: badge_list.append(app_emojis['hypesquad_bravery'])
+        if target.public_flags.hypesquad_brilliance: badge_list.append(app_emojis['hypesquad_brilliance'])
+        if target.public_flags.hypesquad_balance: badge_list.append(app_emojis['hypesquad_balance'])
         
         for flag, value in target.public_flags:
             if value and not flag.startswith("hypesquad"):
@@ -154,17 +243,15 @@ class UserInfo(commands.Cog):
         if badge_list:
             bagian_1.append(f"- **Lencana publik:** {'  '.join(badge_list)}")
         
-        container.add_item(discord.ui.Section(
+        container_sementara.add_item(discord.ui.Section(
             discord.ui.TextDisplay(content='\n'.join(bagian_1)),
             accessory=discord.ui.Thumbnail(media=avatar_url)
         ))
         
-        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         if is_member:
-            joined_at = f"<t:{int(target.joined_at.timestamp())}:R> (<t:{int(target.joined_at.timestamp())}:F>)" \
-                        if target.joined_at else "tidak diketahui"
-            
+            joined_at = f"<t:{int(target.joined_at.timestamp())}:R> (<t:{int(target.joined_at.timestamp())}:F>)" if target.joined_at else "tidak diketahui"
             join_position = "tidak diketahui"
             if ctx.guild and target.joined_at:
                 sorted_members = sorted([m for m in ctx.guild.members if m.joined_at], key=lambda m: m.joined_at)
@@ -180,112 +267,67 @@ class UserInfo(commands.Cog):
                 f"- **Member keberapa bergabung:** {join_position}",
                 f"- **Role tertinggi:** {target.top_role.mention if target.top_role else 'tidak ada'}",
             ]
-            
             if target.premium_since:
-                boosted_at = f"<t:{int(target.premium_since.timestamp())}:R>"
-                bagian_guild.append(f"- **Mulai boost server:** {boosted_at}")
+                bagian_guild.append(f"- **Mulai boost server:** <t:{int(target.premium_since.timestamp())}:R>")
             
-            if target.voice:
-                vc = target.voice.channel
-                vc_states = []
-                
-                if target.voice.mute:
-                    vc_states.append(app_emojis["server_muted"])
-                elif target.voice.self_mute:
-                    vc_states.append(app_emojis["self_muted"])
-                else:
-                    vc_states.append(app_emojis["unmuted_speaking"])
-                
-                if target.voice.deaf:
-                    vc_states.append(app_emojis["server_deafen"])
-                elif target.voice.self_deaf:
-                    vc_states.append(app_emojis["self_deafen"])
-                
-                if target.voice.self_stream:
-                    vc_states.append(app_emojis["screen_sharing"])
-                
-                if target.voice.self_video:
-                    vc_states.append(app_emojis["open_cam"])
-                
-                state_str = f" {' '.join(vc_states)}" if vc_states else ""
-                vc_info = f"{vc.mention} {state_str}"
-                bagian_guild.append(f"- **Sedang VC di:** {vc_info}")
-            
-            container.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_guild)))
-            
-            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-            
-            act_list = []
-            for act in target.activities:
-                if isinstance(act, discord.CustomActivity):
-                    emoji = f"{act.emoji} " if act.emoji else ""
-                    if not act.name or act.name == "Custom Status":
-                        status_kustom = f"**Status kustom:**\n## {emoji}\n"
-                    else:
-                        status_kustom = f"**Status kustom:**\n> {emoji} {act.name}"
-                    act_list.append(status_kustom)
-                    
-                elif act.type == discord.ActivityType.playing or isinstance(act, discord.Game):
-                    details = f" *({act.details})*" if getattr(act, 'details', None) else ""
-                    act_list.append(f"- **Bermain/membuka:** **{act.name}**{details}")
-                    
-                elif isinstance(act, discord.Streaming):
-                    act_list.append(f"- **Streaming:** [{act.name}]({act.url})")
-                    
-                elif isinstance(act, discord.Spotify):
-                    act_list.append(f"- **Mendengarkan Spotify:** {act.title} — *{act.artist}*")
-                    
-                elif act.type == discord.ActivityType.listening:
-                    act_list.append(f"- **Mendengarkan:** {act.name}")
-                    
-                elif act.type == discord.ActivityType.watching:
-                    act_list.append(f"- **Menonton:** {act.name}")
-            
-            if act_list:
-                container.add_item(discord.ui.TextDisplay(content='\n'.join(act_list)))
-                container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container_sementara.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_guild)))
+            container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
             roles = [r.mention for r in reversed(target.roles) if not r.is_default()]
-            total_roles = len(roles)
-            if total_roles > 0:
-                role_text = f"- **Role ({total_roles}):** {', '.join(roles[:8])}"
-                if total_roles > 8:
-                    role_text += f" *(dan {total_roles - 8} role lainnya)*"
+            if roles:
+                role_text = f"- **Role ({len(roles)}):** {', '.join(roles[:8])}"
+                if len(roles) > 8: role_text += f" *(dan {len(roles) - 8} role lainnya)*"
             else:
                 role_text = "- **Role:** tidak memiliki role khusus."
-            container.add_item(discord.ui.TextDisplay(content=role_text))
-            
-            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-            
-            perms = target.guild_permissions
-            perm_text = None
-            
-            if perms.administrator:
-                perm_text = "- **Izin utama:** ⚠️ administrator (akses penuh server)"
-            else:
-                key_perms = []
-                if perms.manage_guild: key_perms.append("kelola server")
-                if perms.manage_roles: key_perms.append("kelola role")
-                if perms.manage_channels: key_perms.append("kelola channel")
-                if perms.kick_members or perms.ban_members: key_perms.append("kick/ban")
-                if perms.moderate_members: key_perms.append("timeout")
-                if perms.manage_messages: key_perms.append("kelola pesan")
-                
-                if key_perms:
-                    perm_text = f"- **Izin utama:** {', '.join(key_perms)}"
-            
-            if perm_text:
-                container.add_item(discord.ui.TextDisplay(content=perm_text))
-                container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container_sementara.add_item(discord.ui.TextDisplay(content=role_text))
+            container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         footer = f"-# {status_emoji}  {target.name} saat ini sedang {status_str}."
-        container.add_item(discord.ui.TextDisplay(content=footer))
+        container_sementara.add_item(discord.ui.TextDisplay(content=f"{footer}  •  Memuat ikon avatar beserta animasi frame..."))
         
-        await ctx.send(
-            view=discord.ui.LayoutView().add_item(container),
-            allowed_mentions=discord.AllowedMentions.none()
+        view_sementara = discord.ui.LayoutView().add_item(container_sementara)
+        pesan_terkirim = await ctx.send(view=view_sementara, allowed_mentions=discord.AllowedMentions.none())
+        
+        avatar_bytes, frame_bytes = await asyncio.gather(
+            self._unduh_bytes(avatar_url),
+            self._unduh_bytes(decoration_url)
         )
+        
+        if avatar_bytes:
+            img_bytes, filename = await asyncio.to_thread(
+                self._gabung_avatar_frame_blocking, avatar_bytes, frame_bytes
+            )
+            file_lampiran = discord.File(io.BytesIO(img_bytes), filename=filename)
+            thumbnail_target = f"attachment://{filename}"
+            
+            container_final = discord.ui.Container(accent_color=accent)
+            container_final.add_item(discord.ui.TextDisplay(content=header_1))
+            container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container_final.add_item(discord.ui.Section(
+                discord.ui.TextDisplay(content='\n'.join(bagian_1)),
+                accessory=discord.ui.Thumbnail(media=thumbnail_target)
+            ))
+            container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            
+            if is_member:
+                container_final.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_guild)))
+                container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+                container_final.add_item(discord.ui.TextDisplay(content=role_text))
+                container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            
+            container_final.add_item(discord.ui.TextDisplay(content=footer))
+            
+            view_final = discord.ui.LayoutView().add_item(container_final)
+            
+            try:
+                await pesan_terkirim.edit(
+                    view=view_final,
+                    attachments=[file_lampiran],
+                    allowed_mentions=discord.AllowedMentions.none()
+                )
+            except discord.HTTPException:
+                pass
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot:commands.Bot):
     await bot.add_cog(UserInfo(bot))

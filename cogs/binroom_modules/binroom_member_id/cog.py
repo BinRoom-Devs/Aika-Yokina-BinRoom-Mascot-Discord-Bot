@@ -1,6 +1,6 @@
 import asyncio
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiohttp
 import discord
@@ -91,7 +91,7 @@ class BinroomID(commands.Cog):
                 return
             byte_avatar = await resp.read()
         
-        teks_tanggal_gabung = self._format_tanggal_indonesia(target.joined_at or datetime.now(timezone.utc))
+        teks_tanggal_gabung = self._format_tanggal_indonesia(target.joined_at or datetime.now(UTC))
         tipe_anggota = self._tentukan_tipe_anggota(target)
         
         buffer_kartu = await asyncio.to_thread(

@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord.ui import Container, LayoutView, Section, Separator, TextDisplay, Thumbnail
 
 from cogs.aika_core.version import LINK_REPO, baca_info_git
+from config import pengaturan
 
 FOLDER_MAP = {
     "aika_chatbot_ai": "🗣️ AI Chatbot",
@@ -16,10 +17,12 @@ FOLDER_MAP = {
     "aika_utility_commands": "💡 Utilitas",
     "binroom_modules": "🧩 Modul BinRoom",
     "leaderboard_central": "📊 Leaderboard / Papan Peringkat",
+    "moderasi": "🛡️ Moderasi"
 }
 
 URUTAN_KATEGORI = [
     "🧩 Modul BinRoom",
+    "🛡️ Moderasi",
     "🗣️ AI Chatbot",
     "📊 Leaderboard / Papan Peringkat",
     "💡 Utilitas",
@@ -87,7 +90,7 @@ class Help(commands.Cog):
         )
     
     async def format_command_help(self, cmd:commands.Command, ctx:commands.Context) -> Container:
-        container = Container(accent_color=0xD675C1)
+        container = Container(accent_color=pengaturan.warna_aika)
         emoji_aika = await self.emoji_aika()
         
         header = f"## {emoji_aika}  Info command `{cmd.qualified_name}`"
@@ -166,7 +169,7 @@ class Help(commands.Cog):
             )
             return
         
-        container = Container(accent_color=0xD675C1)
+        container = Container(accent_color=pengaturan.warna_aika)
         
         header_1 = f"## {await self.emoji_aika()}  Aika Yokina Bot Help"
         container.add_item(TextDisplay(content=header_1))

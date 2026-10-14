@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class RoleInfo(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -26,7 +28,7 @@ class RoleInfo(commands.Cog):
         if role.display_icon and isinstance(role.display_icon, discord.Asset):
             thumb_url = role.display_icon.url
         
-        accent = role.color.value if role.color.value != 0 else 0xD675C1
+        accent = role.color.value if role.color.value != 0 else pengaturan.warna_aika
         container = discord.ui.Container(accent_color=accent)
         
         header_1 = f"### ℹ️  Informasi Role — {role.mention}"

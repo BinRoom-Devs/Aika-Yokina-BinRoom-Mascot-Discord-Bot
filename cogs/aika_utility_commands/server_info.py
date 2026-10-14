@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class ServerInfo(commands.Cog):
     def __init__(self, bot:commands.Bot):
@@ -70,7 +72,7 @@ class ServerInfo(commands.Cog):
         
         tier_boost = f"Level {guild.premium_tier}" if guild.premium_tier > 0 else "belum ada Level"
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         
         header_text = f"### 🏡  Informasi Server — {guild.name}"
         container.add_item(discord.ui.TextDisplay(content=header_text))

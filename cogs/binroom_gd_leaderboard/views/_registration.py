@@ -5,6 +5,7 @@ import string
 import discord
 
 from .._config import NAMA_AKUN_GD_BOT, PENYIMPANAN_VERIFIKASI
+from config import pengaturan
 from .._utils import (
     baca_pesan_masuk_gd,
     buat_embed_gd,
@@ -159,7 +160,7 @@ class TombolKonfirmasiVerifikasi(discord.ui.View):
             embed_gagal = buat_embed_gd(
                 title="<:GD_x:1543409414843662346> Verifikasi gagal",
                 description="Sesi verifikasi kamu sudah kedaluwarsa.\nSilakan klik tombol pendaftaran ulang di channel.",
-                color=discord.Color.red()
+                color=discord.Color(pengaturan.warna_merah)
             )
             await interaksi.edit_original_response(embed=embed_gagal, view=None)
             self.stop()
@@ -201,7 +202,7 @@ class TombolKonfirmasiVerifikasi(discord.ui.View):
             embed_sukses = buat_embed_gd(
                 title="<:GD_complete:1543409457940267078> Verifikasi berhasil!",
                 description=f"Akun **{nama_target}** berhasil didaftarkan ke leaderboard BinRoom\nHappy grinding!",
-                color=discord.Color.green()
+                color=discord.Color(pengaturan.warna_hijau)
             )
             
             await interaksi.edit_original_response(content="<:GD_complete:1543409457940267078> Verifikasi selesai!", embed=None, view=None)
@@ -218,7 +219,7 @@ class TombolKonfirmasiVerifikasi(discord.ui.View):
         embed_batal = buat_embed_gd(
             title="<:GD_x:1543409414843662346> Dibatalkan",
             description="Proses verifikasi telah dibatalkan.",
-            color=discord.Color.red()
+            color=discord.Color(pengaturan.warna_merah)
         )
         await interaksi.response.edit_message(embed=embed_batal, view=None)
         self.stop()
@@ -230,7 +231,7 @@ class TombolKonfirmasiVerifikasi(discord.ui.View):
                 embed_timeout = buat_embed_gd(
                     title="⌛ Waktu Habis",
                     description="Sesi verifikasi ini sudah kadaluarsa karena melewati batas 2 menit. Silakan daftar ulang jika ingin melanjutkan.",
-                    color=discord.Color.red()
+                    color=discord.Color(pengaturan.warna_merah)
                 )
                 try:
                     await self.message.edit(embed=embed_timeout, view=None)

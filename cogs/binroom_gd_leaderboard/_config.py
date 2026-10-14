@@ -1,20 +1,17 @@
-import os
-
 import discord
-from dotenv import load_dotenv
 
-load_dotenv()
+import config
 
-ID_CHANNEL_LEADERBOARD = 1545795446214098975 
+ID_CHANNEL_LEADERBOARD = config.pengaturan.id_channel_leaderboard
 
-NAMA_AKUN_GD_BOT = "AikaBot"
-ACCOUNT_ID_GD_BOT = 43800101
-HASH_GJP2_BOT = os.getenv("HASH_GJP2_BOT")
-BOOMLINGS_SECRET = os.getenv("BOOMLINGS_SECRET")
+NAMA_AKUN_GD_BOT = config.pengaturan.nama_akun_gd_bot
+ACCOUNT_ID_GD_BOT = config.pengaturan.id_akun_gd_bot
+HASH_GJP2_BOT = config.pengaturan.hash_gjp2_bot
+BOOMLINGS_SECRET = config.pengaturan.rahasia_boomlings
 
-GAMBAR_HEADER = "https://cdn.discordapp.com/attachments/863959650448703538/1543244407145373829/Untitled-1.png"
-AUTHOR_ICON_LEADERBOARD = "https://cdn.discordapp.com/attachments/863959650448703538/1543780342379319337/rankIcon_1_001.png?ex=6a961cfb&is=6a94cb7b&hm=33bf6524a61776ae3bf21ccd07c9aab07260085a9c0dddf098ad73ea4bd19f59&"
-AUTHOR_NAME_LEADERBOARD = "BinRoom Geometry Dash Players Leaderboard"
+GAMBAR_HEADER = config.pengaturan.gambar_header_leaderboard
+AUTHOR_ICON_LEADERBOARD = config.pengaturan.ikon_penulis_leaderboard
+AUTHOR_NAME_LEADERBOARD = config.pengaturan.nama_penulis_leaderboard
 
 PENYIMPANAN_VERIFIKASI = {}
 
@@ -61,7 +58,7 @@ META_KATEGORI_LEADERBOARD = {
         "emoji": "<:GD_usercoin:1543545917179699250>",
         "button_emoji": discord.PartialEmoji(name="GD_usercoin", id=1543545917179699250),
         "button_style": discord.ButtonStyle.secondary,
-        "thumbnail": "https://cdn.discordapp.com/attachments/863959650448703538/1544331595366797482/secretCoinUI2_001.png?ex=6a981e60&is=6a96cce0&hm=569c8c330436bc06f885c732ff9b1bf84c8ff5813df7afc9cb4b286fc2479bb1&",
+        "thumbnail": "https://cdn.discordapp.com/attachments/863959650448703538/1544331595366797482/secretCoinUI2_001.png?ex=6a981e60&is=6a96cce0&hm=569c8c330436bc06f885c732ff9b1bf84c8ff5813df3afc9cb4b286fc2479bb1&",
         "accent": 0x929292,
     },
     "diamonds": {

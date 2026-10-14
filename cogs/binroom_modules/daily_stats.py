@@ -1,13 +1,14 @@
 import collections
 import re
-from datetime import datetime, time, timedelta, timezone
+from datetime import UTC, datetime, time, timedelta, timezone
 
 import discord
 from discord.ext import commands, tasks
 
 import database
+from config import pengaturan
 
-ID_CHANNEL_LOG = 932191307789656064
+ID_CHANNEL_LOG = pengaturan.id_channel_logging
 WIB = timezone(timedelta(hours=7))
 
 HARI_INDONESIA = {
@@ -86,13 +87,21 @@ class StatistikHarian(commands.Cog):
     
     async def _simpan_statistik_async(self):
         try:
-            await database.save_daily_stats(self.data_stats)
+            hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
+            await database.save_daily_stats(self.data_stats, hari_ini)
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ [Aika] Database Daily Stats: gagal menyimpan ({e})", flush=True)
     
     async def _muat_statistik(self):
         try:
-            loaded_data = await database.get_daily_stats()
+            loaded_data, tanggal_db = await database.get_daily_stats()
+            hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
+            
+            if tanggal_db and tanggal_db != hari_ini:
+                print(f"🔄 [Daily Stats] Tanggal DB ({tanggal_db}) tidak sama dengan hari ini ({hari_ini}). Me-reset statistik...")
+                await self._reset_statistik()
+                return
+            
             if "emoji_digunakan" in loaded_data and isinstance(loaded_data["emoji_digunakan"], dict):
                 loaded_data["emoji_digunakan"] = collections.Counter(loaded_data["emoji_digunakan"])
             
@@ -105,10 +114,10 @@ class StatistikHarian(commands.Cog):
     
     async def _reset_statistik(self):
         self.data_stats = self._default_stats()
-        sekarang = datetime.now(timezone.utc)
+        sekarang = datetime.now(UTC)
         for user_id in self.vc_join_times:
             self.vc_join_times[user_id] = sekarang
-
+    
         try:
             await database.reset_daily_stats()
         except Exception as e:  # noqa: BLE001
@@ -135,7 +144,7 @@ class StatistikHarian(commands.Cog):
         bulan_str = BULAN_INDONESIA.get(tanggal_ref.month, tanggal_ref.strftime("%B"))
         tahun_str = tanggal_ref.strftime("%Y")
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         
         judul = f"## 📄 Laporan Harian Statistik Server\n (Edisi {hari_str}, {tgl_str} {bulan_str} {tahun_str})"
         container.add_item(discord.ui.TextDisplay(content=judul))
@@ -342,7 +351,7 @@ class StatistikHarian(commands.Cog):
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member, before:discord.VoiceState, after:discord.VoiceState):
-        sekarang = datetime.now(timezone.utc)
+        sekarang = datetime.now(UTC)
         
         if before.channel != after.channel:
             # member masuk vc
@@ -453,22 +462,22 @@ class StatistikHarian(commands.Cog):
         """Menyimpan data statistik ke SQLite setiap 5 menit agar aman dari DB Lock."""
         await self._simpan_statistik_async()
     
-    #hour 17 karna ini UTC, dan supaya di WIB jatuhnya 00.00
-    @tasks.loop(time=time(hour=17, minute=0, second=0, tzinfo=timezone.utc))
+    @tasks.loop(time=time(hour=0, minute=0, second=0, tzinfo=WIB))
     async def tugas_laporan_harian(self):
         kemarin = datetime.now(WIB) - timedelta(days=1)
         
-        for guild in self.bot.guilds:
-            channel = guild.get_channel(ID_CHANNEL_LOG)
-            if isinstance(channel, discord.TextChannel):
-                container = self._buat_container_laporan(guild, kemarin)
-                if container.children:
-                    try:
-                        await channel.send(view=discord.ui.LayoutView().add_item(container))
-                    except discord.HTTPException:
-                        pass
-        
-        await self._reset_statistik()
+        try:
+            for guild in self.bot.guilds:
+                channel = guild.get_channel(ID_CHANNEL_LOG)
+                if isinstance(channel, discord.TextChannel):
+                    container = self._buat_container_laporan(guild, kemarin)
+                    if container.children:
+                        try:
+                            await channel.send(view=discord.ui.LayoutView().add_item(container))
+                        except discord.HTTPException:
+                            pass
+        finally:
+            await self._reset_statistik()
     
     @tugas_laporan_harian.before_loop
     async def sebelum_tugas_laporan_harian(self):

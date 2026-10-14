@@ -5,6 +5,7 @@ from discord import SeparatorSpacing
 from discord.ext import commands
 from discord.ui import Container, LayoutView, Separator, TextDisplay
 
+import config
 from database import (
     baca_leaderboard_streak,
     baca_streak_member,
@@ -35,28 +36,28 @@ class MemberStreak(commands.Cog):
             return
         
         hasil = await proses_streak_harian(message.author.id)
-        status = hasil["status"]
-        container = discord.ui.Container(accent_color=message.author.color)
+        status = hasil.get("status")
         
-        if status == "sudah_masuk":
+        if status == "sudah_masuk" or not status:
             return
+        
+        container = discord.ui.Container(accent_color=message.author.color)
         
         if status == "streak_naik":
             container.add_item(discord.ui.TextDisplay(
-                content=f"### 🔥 Streak nimbrung +1! Sekarang: __{hasil['streak_skrg']} hari__")
-            )
+                content=f"### 🔥 Streak nimbrung +1! Sekarang: __{hasil['streak_skrg']} hari__"
+            ))
             await message.channel.reply(view=LayoutView().add_item(container), delete_after=10)
             
         elif status == "streak_reset":
-            await message.channel.reply(
-                content="Hai lagi! Streak nimbrungmu balik ke 0 karena kemarin absen yah.",
-                delete_after=10
-            )
-            
             container.add_item(discord.ui.TextDisplay(
-                content=f"### 🔥 Streak nimbrung +1! Sekarang: __{hasil['streak_skrg']} hari__")
-            )
-            await message.channel.send(view=LayoutView().add_item(container), delete_after=10)
+                content="Hai lagi! Streak nimbrungmu balik ke 0 karena kemarin absen yah."
+            ))
+            container.add_item(Separator(spacing=SeparatorSpacing.small))
+            container.add_item(discord.ui.TextDisplay(
+                content=f"### 🔥 Streak nimbrung +1! Sekarang: __{hasil['streak_skrg']} hari__"
+            ))
+            await message.channel.reply(view=LayoutView().add_item(container), delete_after=10)
         
     @commands.hybrid_group(
         name="streak",
@@ -154,7 +155,7 @@ class MemberStreak(commands.Cog):
         await ctx.defer()
         top_members = await baca_leaderboard_streak(limit=10)
         
-        container = Container(accent_color=0xDE82CF)
+        container = Container(accent_color=config.pengaturan.warna_aika)
         
         container.add_item(TextDisplay(content="### 🏆  Leaderboard Streak Nimbrung BinRoom"))
         container.add_item(Separator(spacing=SeparatorSpacing.small, visible=False))

@@ -8,6 +8,8 @@ import traceback
 import discord
 from discord.ext import commands
 
+from config import pengaturan
+
 ID_OWNER = 1524951093560213638  # @arumugi_4405
 
 
@@ -142,10 +144,10 @@ class Eval(commands.Cog):
         
         if is_eror:
             str_hasil = self.format_log_ansi(str_hasil)
-            tag_bhs, warna = "ansi", 0xDD2E44
+            tag_bhs, warna = "ansi", pengaturan.warna_merah
             await ctx.message.add_reaction("❌")
         else:
-            tag_bhs, warna = "py", 0xD675C1
+            tag_bhs, warna = "py", pengaturan.warna_aika
             await ctx.message.add_reaction("✅")
         
         BATAS_TEKS = 1900

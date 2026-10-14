@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class ThreadCategoryInfo(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -29,7 +31,7 @@ class ThreadCategoryInfo(commands.Cog):
         
         thumb_url = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/1f9f5.png"  # 🧵
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         
         header_1 = f"### ℹ️  Informasi Thread — {th.mention}"
         container.add_item(discord.ui.TextDisplay(content=header_1))

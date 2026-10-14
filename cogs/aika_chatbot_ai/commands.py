@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 import discord
 from discord.ext import commands
 
+from config import pengaturan
+
 from ._views import HapusIngatan
 
 wib_tz = timezone(timedelta(hours=7))
@@ -320,7 +322,7 @@ class AICommands(commands.Cog):
         embed = discord.Embed(
             title=f"Status Ingatan Aika ({ctx.author.display_name})",
             description=f"**Kapasitas:** [{bar}] `{persentase}%`\n**Pesan tersimpan:** `{jumlah_pesan}/{kapasitas_max}` pesan\n\n",
-            color=0xD675C1
+            color=pengaturan.warna_aika
         )
         embed.set_footer(
             text="Pesan paling lama akan dihapus otomatis saat penuh.\nMau hapus semua sekalian? Gunakan ak!reset-memori",

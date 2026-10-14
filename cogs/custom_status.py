@@ -1,10 +1,8 @@
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 import discord
 from discord.ext import commands, tasks
-
-from dashboard.ui import state
 
 
 class CustomStatusCog(commands.Cog):
@@ -20,12 +18,13 @@ class CustomStatusCog(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
         self.toggle_status = True
+        self.bot_activity = self.STATUS_DEFAULT
     
     def cog_unload(self):
         self.update_status.cancel()
     
     def baca_teks_status_skrg(self) -> str:
-        skrg = datetime.now(timezone.utc).astimezone(self.WIB)
+        skrg = datetime.now(UTC).astimezone(self.WIB)
         sisa_wktu = self.TGL_ANNIV - skrg
         
         if sisa_wktu.total_seconds() <= 0:
@@ -42,14 +41,14 @@ class CustomStatusCog(commands.Cog):
             teks_status = self.baca_teks_status_skrg()
             self.toggle_status = not self.toggle_status
             
-            state.bot_activity = teks_status
+            self.bot_activity = teks_status
             
             await self.bot.change_presence(
                 status=discord.Status.dnd,
-                activity=discord.CustomActivity(name=state.bot_activity)
+                activity=discord.CustomActivity(name=self.bot_activity)
             )
         except Exception as e:  # noqa: BLE001
-            state.log_event(f"[Aika] Gagal update status: {e}")
+            print(f"[Aika] Gagal update status: {e}")
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -62,5 +61,5 @@ class CustomStatusCog(commands.Cog):
         await self.eksekusi_update()
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot:commands.Bot):
     await bot.add_cog(CustomStatusCog(bot))

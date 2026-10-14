@@ -1,8 +1,45 @@
-# Changelog (Riwayat Pembaruan)
+# Changelog (Riwayat Perubahan)
 
-Perubahan pada bot akan dicatat pada file ini.
+Perubahan pada bot akan dicatat di file ini.
 
-Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [Semantic Versioning](https//semver.org/spec/v2.0.0.html).
+Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [pemversian semantik (*Semantic Versioning*)](https//semver.org/spec/v2.0.0.html).
+
+
+## v3.3.0 - 14 Okt 2026
+### Penambahan:
+- Fitur sanitasi output rumus matematika jika model AI Groq-nya nge-output sintaks LateX.
+
+- Implementasi `lazy import` sederhana sebagai persiapan update ke Python v3.15 tapi tetap mempertahankan backward compatibility (padahal blok `import`-nya cuma dipindah dari atas file ke dalam blok eksekusi supya jadi `lazy` secara struktur, iya sih supaya backward-compatible).
+
+- Di fitur chatbot, Aika sekarang bisa ingat dan konteks percakapan dari user lain (biar realistis dan mirip real life). Jadi member A bisa ngerespon dan bawa Aika dengan topiknya si member B.
+
+- Command dan kategori baru: moderasi! `kick`, `ban`, `tempban`, `unban`, `timeout`/`mute`, `untimeout`/`unmute`, `purge`, `purgeuser`, `slowmode`, `lock`, `unlock`.
+
+### Perubahan:
+- Tombol-tombol pada command `snipe` dipindahkan ke bawah / ke luar container/embed.
+
+- Perubahan tampilan embed/container pada command `pfp` dan `banner`. Sebelumnya pakai mode tombol buat pindah2 antara server dan global, sekarang bersebelahan (utk pfp) / bersusunan (utk banner).
+
+- Command `userinfo` kini bisa menampilkan icon lengkap dengan frame.
+
+- Command `frame` sekarang bisa menampilkan bingkai __bergerak__.
+
+- Perbaikan bug pada fitur AI chatbot di mana ada token leak; sebelumnya, kalau si member sempat pakai mode penalaran, di chat-chat selanjutnya pun penggunaan tokennya tetap tinggi (padahal seharusnya kalau non-penalaran: 400-500, sedangkan penalaran 1000+), seharusnya kalau udah gak pake reasoning lagi, penggunaan tokennya harus balik ke normal. Nah, sekarang udah di-fix.
+
+- Ngubah semua warna hijau dari `#2ECC70` ke `#77B256`.
+
+- (Dalam kodingan) Semua variabel warna embed/container dipindahkan ke `config.py`.
+
+- Optimisasi pada beberapa command: `snipe`, `pfp`/`banner`.
+
+- Bugfix pada fitur streak member karena sebelumnya kalau member naik streak, ada eror dikit di kodingannya, jadinya Aika gak ngasih tau.
+
+- Bugfix pada logging sambutan untuk membedakan mana member yang keluar sendiri, yang di-kick, atau yang di-ban.
+
+### Penghapusan:
+- Scanner Sightengine dan dashboard NiceGUI.
+
+- Logging kalau sesi bot dilanjutkan.
 
 
 ## v3.2.1 - 3 Okt 2026

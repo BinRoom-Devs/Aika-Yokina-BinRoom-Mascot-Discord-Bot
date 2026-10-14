@@ -4,6 +4,8 @@ import sys
 import discord
 from discord.ext import commands
 
+import config
+
 
 class CacheManager(commands.Cog):
     def __init__(self,bot):
@@ -83,7 +85,7 @@ class CacheManager(commands.Cog):
             collected = gc.collect()
             item_dihapus.append(f"Garbage collector: {collected} objek")
             
-            container = discord.ui.Container(accent_color=0x77B255)
+            container = discord.ui.Container(accent_color=config.pengaturan.warna_hijau)
             container.add_item(discord.ui.TextDisplay(content="### 🧹✅ Aika Berhasil Di-refresh"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             

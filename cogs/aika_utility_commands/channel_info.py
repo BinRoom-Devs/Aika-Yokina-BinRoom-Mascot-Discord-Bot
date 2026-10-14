@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class ChannelInfo(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -38,7 +40,7 @@ class ChannelInfo(commands.Cog):
         }
         type_name = channel_types.get(ch.type, str(ch.type).replace('_', ' ').title())
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         
         header_1 = f"### ℹ️  Informasi Saluran — {ch.mention}"
         container.add_item(discord.ui.TextDisplay(content=header_1))

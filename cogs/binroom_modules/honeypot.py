@@ -3,11 +3,13 @@ import datetime
 import discord
 from discord.ext import commands
 
+import config
+
 
 class Honeypot(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.ID_CHANNEL_RANJAU = 1498144198577356831
+        self.ID_CHANNEL_RANJAU = config.pengaturan.id_channel_ranjau
     
     @commands.Cog.listener()
     async def on_message(self, pesan:discord.Message):
@@ -31,7 +33,7 @@ class Honeypot(commands.Cog):
             embed = discord.Embed(
                 title="Tertangkap di honeypot! 🛑",
                 description="Tinjau apabila ini ketidaksengajaan atau konfirmasi dengan pemilik akun jika akses berhasil di-recover.",
-                timestamp=datetime.datetime.now(datetime.timezone.utc),
+                timestamp=datetime.datetime.now(datetime.UTC),
                 color=0xFF0000
             )
             embed.set_thumbnail(url=f"{pesan.author.display_avatar.url}")

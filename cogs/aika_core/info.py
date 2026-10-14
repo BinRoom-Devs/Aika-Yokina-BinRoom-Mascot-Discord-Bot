@@ -14,6 +14,8 @@ import discord
 import psutil
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class InformasiSistem:
     @staticmethod
@@ -56,7 +58,7 @@ class InformasiSistem:
                 hash_panjang = data["sha"]
                 hash_commit = hash_panjang[:7]
                 iso_date = data["commit"]["committer"]["date"]
-                dt = datetime.datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
+                dt = datetime.datetime.fromisoformat(iso_date)
                 waktu_commit = int(dt.timestamp())
                 return hash_commit, hash_panjang, waktu_commit
         except Exception:  # noqa: BLE001
@@ -111,7 +113,7 @@ class InformasiSistem:
         for jalur in jalur_cgroup:
             if os.path.exists(jalur):
                 try:
-                    with open(jalur, "r") as f:
+                    with open(jalur, "r", encoding="utf-8") as f:
                         nilai = f.read().strip()
                         if nilai != "max" and nilai.isdigit():
                             batas_bytes = int(nilai)
@@ -289,7 +291,7 @@ class Info(commands.Cog):
     def uptime(self) -> str:
         cog_uptime = self.bot.get_cog("Uptime")
         if cog_uptime and hasattr(cog_uptime, "start_time"):
-            skrg = datetime.datetime.now(datetime.timezone.utc)
+            skrg = datetime.datetime.now(datetime.UTC)
             total_detik = int((skrg - cog_uptime.start_time).total_seconds())
             
             detik_per_menit = 60
@@ -332,7 +334,7 @@ class Info(commands.Cog):
     async def info(self, ctx:commands.Context):
         ping_info, target_pesan = await self.hitung_latensi(ctx, None)
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         
         emoji_aika = await self.emoji_aika()
         judul = f"### {emoji_aika}  Informasi Lengkap Aika"

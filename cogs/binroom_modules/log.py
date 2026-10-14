@@ -10,16 +10,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
+import config
 import database
 
-OWNER_ID = int(os.getenv("OWNER_ID", "1524951093560213638")) # @arumugi_4405
-BINROOM = int(os.getenv("BINROOM", "904972136328888340")) #bisa diatur di env biar gampang utk testing, tapi bkl default ke binroom
-LOG_CHANNEL_ID = int(os.getenv("CHANNEL_LOGGING", "932191307789656064"))
-CHANNEL_SAMBUTAN = int(os.getenv("CHANNEL_SAMBUTAN", "904973494813614141"))
+OWNER_ID = config.pengaturan.id_pemilik
+BINROOM = config.pengaturan.id_server_binroom
+LOG_CHANNEL_ID = config.pengaturan.id_channel_logging
+CHANNEL_SAMBUTAN = config.pengaturan.id_channel_sambutan
 CHANNEL_PENGECUALIAN = 1498144198577356831
 
 WARNA_DISCORD = discord.Color.from_str("#5662f6")
-WARNA_AIKA = discord.Color.from_str("#D675C1")
+WARNA_AIKA = discord.Color(config.pengaturan.warna_aika)
 
 LOGO_AUTOMOD = "https://cdn.discordapp.com/attachments/863959650448703538/1541927557501296711/632a24dc0918d34459738418_AutoMod-Final-Blog-Author.png"
 LOGO_DISCORD = "https://cdn.discordapp.com/attachments/863959650448703538/1541928366981128305/Discord-Symbol-Blurple.png"
@@ -209,9 +210,9 @@ class ServerLogger(commands.Cog):
         else:
             await self.kirim_log_lifecycle("🔄🌸 Aika Tersambung Kembali", "Sambungan Aika sempat terputus dengan Discord.\nSekarang Aika sudah tersambung kembali!", 0x76AE58)
     
-    @commands.Cog.listener()
-    async def on_resumed(self) -> None:
-        await self.kirim_log_lifecycle("➡️🌸 Sesi Aika Dilanjutkan", "Aika berhasil melanjutkan sesi gateway.", 0x76AE58)
+    #@commands.Cog.listener()
+    #async def on_resumed(self) -> None:
+    #    await self.kirim_log_lifecycle("➡️🌸 Sesi Aika Dilanjutkan", "Aika berhasil melanjutkan sesi gateway.", 0x76AE58)
     
     @commands.Cog.listener()
     async def on_app_command_completion(self, interaction:discord.Interaction, command:app_commands.Command|app_commands.ContextMenu) -> None:
@@ -270,7 +271,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🌸🛑 Command Aika Eror",
             description=f"Gagal mengeksekusi perintah `/{cmd_name}` di {interaction.channel.mention if interaction.channel else 'DM'}.\n\n`{str(error)[:1500]}`",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.set_author(name=f"Pengguna: {interaction.user.name}", icon_url=interaction.user.display_avatar.url)
@@ -340,7 +341,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🌸🛑 Command Aika Eror",
             description=f"Gagal mengeksekusi perintah `{cmd_name}` di {ctx.channel.mention}.\n\n`{str(error)[:1500]}`",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.set_author(name=f"Pengguna: {ctx.author.name}", icon_url=ctx.author.display_avatar.url)
@@ -426,7 +427,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗑️ Pesan Dihapus",
             description=f"{content}\n\n{message.author.mention}, {message.channel.mention}",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.set_author(name=message.author.name, icon_url=message.author.display_avatar.url)
@@ -464,7 +465,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗑️🧻 Penghapusan Pesan Masal (Bulk Delete)",
             description=f"Sebanyak __{len(messages)} pesan__ telah dihapus di {messages[0].channel.mention}{pelaksana}.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         if "Tidak ada alasan" not in reason:
@@ -527,7 +528,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗑️🚫 Semua Reaksi Dihapus",
             description=f"Semua reaksi telah dibersihkan dari pesan di <#{payload.channel_id}>.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text=f"ID Channel: {payload.channel_id}  •  ID Pesan: {payload.message_id}")
@@ -581,7 +582,7 @@ class ServerLogger(commands.Cog):
             embed = discord.Embed(
                 title="📥🤖 Bot Bergabung ke Server",
                 description=f"Bot {member.mention} telah ditambahkan ke server{pelaksana}.",
-                color=discord.Color.green(),
+                color=discord.Color(config.pengaturan.warna_hijau),
                 timestamp=discord.utils.utcnow()
             )
             if "Tidak ada alasan" not in reason:
@@ -591,12 +592,12 @@ class ServerLogger(commands.Cog):
             embed = discord.Embed(
                 title="📥🚪👤 Member Bergabung",
                 description=f"{member.mention} telah bergabung ke server.",
-                color=discord.Color.green(),
+                color=discord.Color(config.pengaturan.warna_hijau),
                 timestamp=discord.utils.utcnow()
             )
             embed.set_footer(text=f"ID User: {member.id}")
             
-            container = discord.ui.Container(accent_color=discord.Color.green())
+            container = discord.ui.Container(accent_color=discord.Color(config.pengaturan.warna_hijau))
             container.add_item(discord.ui.TextDisplay(content=f"## Selamat datang, {member.mention}! 🩷👋🏻"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.Section(
@@ -616,7 +617,7 @@ class ServerLogger(commands.Cog):
         await channel_sambutan.send(view=discord.ui.LayoutView().add_item(container))
     
     @commands.Cog.listener()
-    async def on_member_remove(self, member:discord.Member) -> None:
+    async def on_member_remove(self, member: discord.Member) -> None:
         channel = await self.buka_channel_logging(member.guild)
         channel_sambutan = self.bot.get_channel(CHANNEL_SAMBUTAN)
         
@@ -631,16 +632,28 @@ class ServerLogger(commands.Cog):
             durasi = self.format_durasi_tunggal(total_detik)
         
         kick_entry = None
+        ban_entry = None
+        
         if member.guild.me.guild_permissions.view_audit_log:
             try:
-                async for entry in member.guild.audit_logs(limit=3, action=discord.AuditLogAction.kick):
-                    if entry.target and entry.target.id == member.id:
-                        time_diff = (discord.utils.utcnow() - entry.created_at).total_seconds()
-                        if time_diff < 10:
+                async for entry in member.guild.audit_logs(limit=3, action=discord.AuditLogAction.ban):
+                    if entry.target and entry.target.id == member.id \
+                    and (discord.utils.utcnow() - entry.created_at).total_seconds() < 10:
+                        ban_entry = entry
+                        break
+                
+                if not ban_entry:
+                    async for entry in member.guild.audit_logs(limit=3, action=discord.AuditLogAction.kick):
+                        if entry.target and entry.target.id == member.id \
+                        and (discord.utils.utcnow() - entry.created_at).total_seconds() < 10:
                             kick_entry = entry
                             break
+                
             except (discord.HTTPException, discord.Forbidden):
                 pass
+        
+        if ban_entry:
+            return
         
         if kick_entry:
             cog_stats = self.bot.get_cog("StatistikHarian")
@@ -653,14 +666,14 @@ class ServerLogger(commands.Cog):
             embed = discord.Embed(
                 title="📤🦵🏻👤 Member Di-kick",
                 description=f"{member.mention} telah dikeluarkan dari server.{str_durasi}",
-                color=discord.Color.red(),
+                color=discord.Color(config.pengaturan.warna_merah),
                 timestamp=discord.utils.utcnow()
             )
             embed.add_field(name="Di-kick oleh", value=actor.mention if actor else "Tidak Diketahui", inline=True)
             embed.add_field(name="Alasan", value=reason, inline=True)
             
             alasan = f"gara2 __{reason}__" if reason != 'Tidak ada alasan' else ''
-            container = discord.ui.Container(accent_color=discord.Color.red())
+            container = discord.ui.Container(accent_color=discord.Color(config.pengaturan.warna_merah))
             container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.global_name} {member.mention} 😠🦵🏻"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.Section(
@@ -671,21 +684,18 @@ class ServerLogger(commands.Cog):
                 )),
                 accessory=discord.ui.Thumbnail(media=member.display_avatar.url)
             ))
+            
         else:
-            org_atw_bot = ''
-            if member.bot:
-                org_atw_bot = "🤖 Bot"
-            else:
-                org_atw_bot = "👤 Member"
+            org_atw_bot = "🤖 Bot" if member.bot else "👤 Member"
             
             embed = discord.Embed(
                 title=f"📤🚪{org_atw_bot} Keluar",
                 description=f"{member.mention} meninggalkan server.{str_durasi}",
-                color=discord.Color.red(),
+                color=discord.Color(config.pengaturan.warna_merah),
                 timestamp=discord.utils.utcnow()
             )
             
-            container = discord.ui.Container(accent_color=discord.Color.red())
+            container = discord.ui.Container(accent_color=discord.Color(config.pengaturan.warna_merah))
             container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {member.global_name} {member.mention} 😿💔"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.Section(
@@ -745,7 +755,7 @@ class ServerLogger(commands.Cog):
         
         embed = discord.Embed(
             title="🔗 Link Invite Dibuat",
-            color=discord.Color.green()
+            color=discord.Color(config.pengaturan.warna_hijau)
         )
         embed.add_field(name="Kode Invite", value=invite.code, inline=True)
         embed.add_field(name="Tujuan", value=invite.channel.mention if invite.channel else "N/A", inline=True)
@@ -775,7 +785,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🔗🗑️ Link Invite Dihapus",
             description=f"Kode Invite `{invite.code}` di channel {invite.channel.mention if invite.channel else 'N/A'} telah dihapus.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.set_author(name=inviter_name, icon_url=inviter_icon)
@@ -843,7 +853,7 @@ class ServerLogger(commands.Cog):
                 embed = discord.Embed(
                     title="➕🏷️ Role Ditambahkan",
                     description=f"{after.mention} mendapatkan role {added_mentions}.",
-                    color=discord.Color.green(),
+                    color=discord.Color(config.pengaturan.warna_hijau),
                     timestamp=discord.utils.utcnow()
                 )
                 embed.set_author(name=after.name, icon_url=after.display_avatar.url)
@@ -860,7 +870,7 @@ class ServerLogger(commands.Cog):
                 embed = discord.Embed(
                     title="❌🏷️ Role Dicabut",
                     description=f"Role {removed_mentions} dicabut dari {after.mention}.",
-                    color=discord.Color.red(),
+                    color=discord.Color(config.pengaturan.warna_merah),
                     timestamp=discord.utils.utcnow()
                 )
                 embed.set_author(name=after.name, icon_url=after.display_avatar.url)
@@ -904,7 +914,7 @@ class ServerLogger(commands.Cog):
                     embed = discord.Embed(
                         title="🕑✅👤 Timeout Selesai",
                         description=f"Masa timeout untuk {after.mention} telah selesai secara otomatis.",
-                        color=discord.Color.green()
+                        color=discord.Color(config.pengaturan.warna_hijau)
                     )
                 else:
                     actor, reason = await self.baca_audit_log(after.guild, discord.AuditLogAction.member_update, after.id)
@@ -913,7 +923,7 @@ class ServerLogger(commands.Cog):
                     embed = discord.Embed(
                         title="🕑✅👤 Timeout Dihapus",
                         description=f"Status timeout untuk {after.mention} telah dicabut oleh {actor_mention}.",
-                        color=discord.Color.green()
+                        color=discord.Color(config.pengaturan.warna_hijau)
                     )
                     if "Tidak ada alasan" not in reason:
                         embed.add_field(name="Alasan", value=reason, inline=True)
@@ -958,7 +968,7 @@ class ServerLogger(commands.Cog):
                 embed = discord.Embed(
                     title="📥🔊 Masuk Voice Channel",
                     description=f"{member.mention} bergabung ke {after.channel.mention}",
-                    color=discord.Color.green(),
+                    color=discord.Color(config.pengaturan.warna_hijau),
                     timestamp=discord.utils.utcnow()
                 )
                 info_tambahan = f"VC ID: {after.channel.id}"
@@ -980,7 +990,7 @@ class ServerLogger(commands.Cog):
                 embed = discord.Embed(
                     title="📤🔊 Keluar Voice Channel",
                     description=f"{member.mention} meninggalkan {before.channel.mention}{str_durasi}",
-                    color=discord.Color.red(),
+                    color=discord.Color(config.pengaturan.warna_merah),
                     timestamp=discord.utils.utcnow()
                 )
                 info_tambahan = f"VC ID: {before.channel.id}"
@@ -996,7 +1006,7 @@ class ServerLogger(commands.Cog):
                     embed_bubar = discord.Embed(
                         title="🛑🔊 Sesi VC Selesai",
                         description=f"VC {before.channel.mention} `🔊 {before.channel.name}` sudah bubar.{str_durasi_vc}",
-                        color=discord.Color.red(),
+                        color=discord.Color(config.pengaturan.warna_merah),
                         timestamp=discord.utils.utcnow()
                     )
                     embed_bubar.set_author(name=member.guild.name, icon_url=guild_icon)
@@ -1017,7 +1027,7 @@ class ServerLogger(commands.Cog):
                     temp_bubar = discord.Embed(
                         title="🛑🔊 Sesi VC Selesai",
                         description=f"VC {before.channel.mention} `🔊 {before.channel.name}` sudah bubar.{str_durasi_vc}",
-                        color=discord.Color.red(),
+                        color=discord.Color(config.pengaturan.warna_merah),
                         timestamp=discord.utils.utcnow()
                     )
                     temp_bubar.set_author(name=member.guild.name, icon_url=guild_icon)
@@ -1052,11 +1062,11 @@ class ServerLogger(commands.Cog):
             if after.self_stream:
                 self.status_live[member.id] = discord.utils.utcnow()
                 state_text = "🎥 memulai screen sharing"
-                warna_role = discord.Color.green()
+                warna_role = discord.Color(config.pengaturan.warna_hijau)
             else:
                 waktu_streaming = self.status_live.pop(member.id, None)
                 state_text = "🛑 menghentikan screen sharing."
-                warna_role = discord.Color.red()
+                warna_role = discord.Color(config.pengaturan.warna_merah)
                 if waktu_streaming:
                     total_detik_strm = int((discord.utils.utcnow() - waktu_streaming).total_seconds())
                     str_durasi_strm = f"\n-# (Sempat streaming selama __{self.format_durasi(total_detik_strm)}__)"
@@ -1098,7 +1108,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title=f"{title_emoji} Channel Dibuat",
             description=f"Channel {channel.mention} `{desc_emoji}{channel.name}` telah dibuat oleh {actor_mention}.",
-            color=discord.Color.green(),
+            color=discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         if "Tidak ada alasan" not in reason:
@@ -1152,7 +1162,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="#️⃣🗑️ Channel Dihapus",
             description=f"Channel `{channel.name}` telah dihapus.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Dihapus oleh", value=actor_mention, inline=True)
@@ -1177,7 +1187,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🏷️➕ Role Dibuat",
             description=f"{role.mention} (`@{role.name}`) telah dibuat.",
-            color=role.color if role.color.value != 0 else discord.Color.green(),
+            color=role.color if role.color.value != 0 else discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Dibuat oleh", value=actor_mention, inline=True)
@@ -1250,7 +1260,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🏷️🗑️ Role Dihapus",
             description=f"Role `@{role.name}` telah dihapus oleh {actor_mention}.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         if "Tidak ada alasan" not in reason:
@@ -1344,7 +1354,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🤖🔗 Integrasi Aplikasi Dibuat",
             description=f"Integrasi __{integration.name}__ (tipe: `{integration.type}`) telah ditambahkan.",
-            color=discord.Color.green(),
+            color=discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Ditambahkan oleh", value=actor_mention, inline=True)
@@ -1371,7 +1381,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗼🔊 Stage Channel Dimulai",
             description=f"Stage {stage_instance.channel.mention if stage_instance.channel else 'N/A'} telah dimulai.\n**Topik:** {stage_instance.topic}",
-            color=discord.Color.green(),
+            color=discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text=f"Stage ID: {stage_instance.id}  •  ID Channel: {stage_instance.channel_id}")
@@ -1388,7 +1398,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗼🛑 Stage Channel Selesai",
             description=f"Stage di {stage_instance.channel.mention if stage_instance.channel else 'N/A'} telah dihentikan.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text=f"Stage ID: {stage_instance.id}")
@@ -1410,7 +1420,7 @@ class ServerLogger(commands.Cog):
                 embed = discord.Embed(
                     title=f"🤨➕ Emoji Ditambahkan ({len(added)})",
                     description=daftar,
-                    color=discord.Color.green(),
+                    color=discord.Color(config.pengaturan.warna_hijau),
                     timestamp=discord.utils.utcnow()
                 )
                 await channel.send(embed=embed)
@@ -1421,7 +1431,7 @@ class ServerLogger(commands.Cog):
                 embed = discord.Embed(
                     title="🤨🗑️ Emoji Dihapus",
                     description=f"Emoji `:{removed[0].name}:` telah dihapus.",
-                    color=discord.Color.red(),
+                    color=discord.Color(config.pengaturan.warna_merah),
                     timestamp=discord.utils.utcnow()
                 )
                 await channel.send(embed=embed)
@@ -1450,7 +1460,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🧵➕ Thread Dibuat",
             description=f"{thread.mention} dibuat oleh {creator} di channel {thread.parent.mention if thread.parent else 'N/A'}.",
-            color=discord.Color.green(),
+            color=discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text=f"Thread ID: {thread.id}  •  Creator ID: {thread.owner_id}")
@@ -1465,7 +1475,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🧵🗑️ Thread Dihapus",
             description=f"Thread `#{thread.name}` ({thread.id}) telah dihapus.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         await channel.send(embed=embed)
@@ -1483,7 +1493,7 @@ class ServerLogger(commands.Cog):
             embed = discord.Embed(
                 title=f"{emoji} Thread {status}",
                 description=f"Status arsip thread {after.mention} telah diubah menjadi **{status}**.",
-                color=discord.Color.orange() if after.archived else discord.Color.green(),
+                color=discord.Color.orange() if after.archived else discord.Color(config.pengaturan.warna_hijau),
                 timestamp=discord.utils.utcnow()
             )
             
@@ -1492,7 +1502,7 @@ class ServerLogger(commands.Cog):
             embed = discord.Embed(
                 title=f"Thread {status}",
                 description=f"Thread {after.mention} telah **{status}** oleh moderator.",
-                color=discord.Color.red() if after.locked else discord.Color.green(),
+                color=discord.Color(config.pengaturan.warna_merah) if after.locked else discord.Color(config.pengaturan.warna_hijau),
                 timestamp=discord.utils.utcnow()
             )
             
@@ -1522,7 +1532,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗓️➕ Event Server Dibuat",
             description=f"Event **{event.name}** telah dijadwalkan.",
-            color=discord.Color.green(),
+            color=discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Dibuat oleh", value=creator, inline=True)
@@ -1543,7 +1553,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🗓️🛑 Event Server Dibatalkan/Dihapus",
             description=f"Event **{event.name}** ({event.id}) telah dibatalkan.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         await channel.send(embed=embed)
@@ -1565,7 +1575,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🔨👤 Member Di-ban",
             description=f"User `@{user.name}` telah di-ban dari server.",
-            color=discord.Color.red(),
+            color=discord.Color(config.pengaturan.warna_merah),
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Di-ban oleh", value=actor_mention, inline=True)
@@ -1575,7 +1585,7 @@ class ServerLogger(commands.Cog):
         embed.set_footer(text=f"User ID: {user.id}")
         
         alasan = f"gara2 __{reason}__" if reason != 'Tidak ada alasan' else ''
-        container = discord.ui.Container(accent_color=discord.Color.red())
+        container = discord.ui.Container(accent_color=discord.Color(config.pengaturan.warna_merah))
         container.add_item(discord.ui.TextDisplay(content=f"## Dadah, {user.global_name} {user.mention} 😠🔨"))
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.Section(
@@ -1605,7 +1615,7 @@ class ServerLogger(commands.Cog):
         embed = discord.Embed(
             title="🔨👤✅ Ban Dicabut",
             description=f"`@{user.name}` telah di-unban.",
-            color=discord.Color.green(),
+            color=discord.Color(config.pengaturan.warna_hijau),
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Di-unban oleh", value=actor_mention, inline=True)

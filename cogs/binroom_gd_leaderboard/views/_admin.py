@@ -4,6 +4,7 @@ import math
 import discord
 
 from .._utils import buat_embed_gd, load_daftar_player_async, simpan_daftar_player_async
+from config import pengaturan
 
 
 class TampilanKonfirmasiHapus(discord.ui.View):
@@ -15,7 +16,7 @@ class TampilanKonfirmasiHapus(discord.ui.View):
     async def on_timeout(self):
         embed_timeout = buat_embed_gd(
             description="<:GD_x:1543409414843662346> <:GD_trash:1543822477153800353> Sesi konfirmasi penghapusan telah kadaluarsa.",
-            color=discord.Color.red()
+            color=discord.Color(pengaturan.warna_merah)
         )
         if self.pesan:
             try:
@@ -45,7 +46,7 @@ class TampilanKonfirmasiHapus(discord.ui.View):
         embed_berhasil = buat_embed_gd(
             title="<:GD_complete:1543409457940267078> <:GD_trash:1543822477153800353> Player dihapus",
             description=f"**{target_name}** telah dihapus dari leaderboard GD BinRoom.",
-            color=discord.Color.green()
+            color=discord.Color(pengaturan.warna_hijau)
         )
         
         await interaksi.response.edit_message(content="<:GD_complete:1543409457940267078> Penghapusan selesai.", embed=None, view=None)
@@ -99,7 +100,7 @@ class SelectPilihHapusPlayer(discord.ui.Select):
                 f"Yakin ingin menghapus player **{nama_target}** dari leaderboard GD BinRoom?\n\n"
                 f"-# Batal otomatis <t:{waktu_kadaluarsa}:R>"
             ),
-            color=discord.Color.red()
+            color=discord.Color(pengaturan.warna_merah)
         )
         
         await interaksi.response.edit_message(embed=embed_konfirmasi, view=view_konfirmasi)

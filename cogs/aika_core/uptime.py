@@ -3,11 +3,13 @@ import datetime
 import discord
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class Uptime(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
-        self.start_time = datetime.datetime.now(datetime.timezone.utc)
+        self.start_time = datetime.datetime.now(datetime.UTC)
 
     def format_stopwatch(self, delta:datetime.timedelta) -> str:
         hari = delta.days
@@ -25,13 +27,13 @@ class Uptime(commands.Cog):
     
     @commands.hybrid_command(name="uptime", description="Nampilin waktu aktifnya Aika.")
     async def uptime(self, ctx:commands.Context):
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         delta = now - self.start_time
         
         waktu_aktif = self.format_stopwatch(delta)
         timestamp_awal = int(self.start_time.timestamp())
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         container.add_item(discord.ui.TextDisplay(
             content=("**⏲️ Waktu Aktif Aika**\n"
                      f"# {waktu_aktif}")

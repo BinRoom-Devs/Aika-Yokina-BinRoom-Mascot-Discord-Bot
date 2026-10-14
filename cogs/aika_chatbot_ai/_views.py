@@ -3,6 +3,8 @@
 import discord
 from discord import app_commands
 
+from config import pengaturan
+
 
 class HapusIngatan(discord.ui.View):
     def __init__(self, cog, user_id:int):
@@ -18,7 +20,7 @@ class HapusIngatan(discord.ui.View):
         embed = discord.Embed(
             title="Gak jadi reset, ya?",
             description="Sip, deh, Aika masih bakal ingat kamu. 😌",
-            color=0xD675C1,
+            color=pengaturan.warna_aika,
         )
         if self.message:
             try:
@@ -62,7 +64,7 @@ class HapusIngatan(discord.ui.View):
             interaction,
             "✅ Memori dihapus",
             "Ingatan Aika tentangmu udah di-reset.",
-            0xD675C1,
+            pengaturan.warna_aika,
             clear_mem=True
         )
         if interaction.guild:
@@ -81,7 +83,7 @@ class HapusIngatan(discord.ui.View):
             interaction,
             "Dibatalkan",
             "Reset ingatan dibatalkan. Aika masih ingat kamu.",
-            0xD675C1,
+            pengaturan.warna_aika,
             clear_mem=False
         )
 

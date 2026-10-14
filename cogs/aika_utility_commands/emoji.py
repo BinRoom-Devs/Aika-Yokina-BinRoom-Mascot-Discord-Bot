@@ -6,16 +6,18 @@ from functools import lru_cache
 
 import aiohttp
 import discord
-import resvg_py
 from discord.ext import commands
-from PIL import Image, ImageSequence
 
-DEFAULT_COLOR = 0xD675C1
+from config import pengaturan
+
+DEFAULT_COLOR = pengaturan.warna_aika
 TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg'
 
 
 def _render_svg_resvg(byte_gambar:bytes, target_size:int=512) -> bytes:
     """Render SVG ke PNG via resvg_py (butuh string, bukan bytes)."""
+    import resvg_py
+    
     svg_string = byte_gambar.decode('utf-8')
     hasil = resvg_py.svg_to_bytes(
         svg_string=svg_string,
@@ -31,6 +33,8 @@ def _proses_gambar_blocking(byte_gambar:bytes, is_svg:bool=False) -> tuple[int, 
     Ngeproses gambar (blocking, dijalanin di thread terpisah).
     Return bytes (bukan BytesIO) biar aman di-cache, BytesIO dibikin per-pemanggilan.
     """
+    from PIL import Image, ImageSequence
+    
     try:
         if is_svg:
             png_bytes = _render_svg_resvg(byte_gambar, target_size=512)
@@ -43,9 +47,16 @@ def _proses_gambar_blocking(byte_gambar:bytes, is_svg:bool=False) -> tuple[int, 
         beranimasi = getattr(img, "is_animated", False) and total_frame > 1
         format_gmbr = getattr(img, "format", "PNG") or "PNG"
         
+        try:
+            resample_nearest = Image.Resampling.NEAREST
+            resample_lanczos = Image.Resampling.LANCZOS
+        except AttributeError:
+            resample_nearest = Image.NEAREST
+            resample_lanczos = Image.LANCZOS
+        
         rgba = img.convert("RGBA")
         bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
-        thumb = Image.alpha_composite(bg, rgba).convert("RGB").resize((32, 32), Image.Resampling.NEAREST)
+        thumb = Image.alpha_composite(bg, rgba).convert("RGB").resize((32, 32), resample_nearest)
         quantized = thumb.quantize(colors=1)
         palette = quantized.getpalette()
         
@@ -69,7 +80,7 @@ def _proses_gambar_blocking(byte_gambar:bytes, is_svg:bool=False) -> tuple[int, 
             loop_asli = img.info.get('loop', 0)
             
             frames = [
-                frame.convert('RGBA').resize(ukuran_baru, resample=Image.Resampling.LANCZOS)
+                frame.convert('RGBA').resize(ukuran_baru, resample=resample_lanczos)
                 for frame in ImageSequence.Iterator(img)
             ]
             frames[0].save(
@@ -83,7 +94,7 @@ def _proses_gambar_blocking(byte_gambar:bytes, is_svg:bool=False) -> tuple[int, 
             )
         else:
             if not is_svg:
-                img = img.resize(ukuran_baru, resample=Image.Resampling.LANCZOS)
+                img = img.resize(ukuran_baru, resample=resample_lanczos)
             img.save(buffer_hasil, format='PNG')
         
         return warna, ukuran_baru[0], ukuran_baru[1], beranimasi, total_frame, buffer_hasil.getvalue()

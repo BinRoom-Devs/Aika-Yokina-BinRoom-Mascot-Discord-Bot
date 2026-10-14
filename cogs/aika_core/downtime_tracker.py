@@ -1,6 +1,6 @@
 import asyncio
 from collections import deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiohttp
 import discord
@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 from discord.ui import Container, LayoutView, Separator, TextDisplay
 
 import database
+from config import pengaturan
 
 
 class PendeteksiGangguan(commands.Cog):
@@ -60,7 +61,7 @@ class PendeteksiGangguan(commands.Cog):
         if not self.riwayat:
             self.riwayat.append({
                 "status": "ok",
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(UTC),
                 "alasan": "Berjalan normal",
             })
             self.simpan_riwayat()
@@ -87,7 +88,7 @@ class PendeteksiGangguan(commands.Cog):
             print(f"⚠️ [Aika] Database Downtime Tracker: gagal menyimpan riwayat ({e})", flush=True)
     
     def catat_restart(self, alasan:str):
-        skrg = datetime.now(timezone.utc)
+        skrg = datetime.now(UTC)
         self.waktu_cek_terakhir = skrg
         
         if self.riwayat and self.riwayat[-1]["status"] == "restart":
@@ -112,7 +113,7 @@ class PendeteksiGangguan(commands.Cog):
         self.simpan_riwayat()
     
     def catat_error(self, alasan:str):
-        skrg = datetime.now(timezone.utc)
+        skrg = datetime.now(UTC)
         self.waktu_cek_terakhir = skrg
         
         if self.riwayat and self.riwayat[-1]["status"] == "down":
@@ -191,7 +192,7 @@ class PendeteksiGangguan(commands.Cog):
     
     @tasks.loop(minutes=30)
     async def cek_health(self):
-        skrg = datetime.now(timezone.utc)
+        skrg = datetime.now(UTC)
         self.waktu_cek_terakhir = skrg
         
         if self.bot.is_closed() or self.bot.latency == float("inf"):
@@ -222,11 +223,11 @@ class PendeteksiGangguan(commands.Cog):
         
         status_saat_ini = self.riwayat[-1]["status"]
         if status_saat_ini == "ok":
-            warna = discord.Color.green()
+            warna = discord.Color(pengaturan.warna_hijau)
         elif status_saat_ini == "restart":
-            warna = 0xFCCA58  # Hex #fcca58
+            warna = pengaturan.warna_kuning
         else:
-            warna = 0xDA2D43
+            warna = pengaturan.warna_merah
         
         #---
         

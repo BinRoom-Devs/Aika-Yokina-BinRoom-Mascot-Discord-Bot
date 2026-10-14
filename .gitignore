@@ -67,6 +67,7 @@ desktop.ini
 .coverage
 htmlcov/
 .tox/
+update_nanti/
 
 # Temporary files
 *.tmp

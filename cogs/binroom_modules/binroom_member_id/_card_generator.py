@@ -1,15 +1,14 @@
 import io
 
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
-
 BULAN_BHS_INDO = {
     1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
     5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",
     9: "September", 10: "Oktober", 11: "November", 12: "Desember"
 }
 
-def bikin_pojokan_melengkung(gmbr:Image.Image, radius:int=35) -> Image.Image:
+def bikin_pojokan_melengkung(gmbr, radius:int=35):
+    from PIL import Image, ImageDraw
+    
     mask = Image.new("L", gmbr.size, 0)
     draw = ImageDraw.Draw(mask)
     draw.rounded_rectangle([(0, 0), gmbr.size], radius=radius, fill=255)
@@ -27,12 +26,20 @@ def bikin_kartu_member(
     nomor_member: int,
     jenis_member: str,
 ) -> io.BytesIO:
+    import qrcode
+    from PIL import Image, ImageDraw, ImageFont
+    
+    try:
+        resample_lanczos = Image.Resampling.LANCZOS
+    except AttributeError:
+        resample_lanczos = Image.LANCZOS
+    
     base = Image.open(gambar_polosan).convert("RGBA")
     
     diameter_pfp = 244  
     
     avatar = Image.open(io.BytesIO(ukuran_byte_pfp)).convert("RGBA")
-    avatar = avatar.resize((diameter_pfp, diameter_pfp), Image.Resampling.LANCZOS)
+    avatar = avatar.resize((diameter_pfp, diameter_pfp), resample_lanczos)
     
     mask = Image.new("L", (diameter_pfp, diameter_pfp), 0)
     ImageDraw.Draw(mask).ellipse((0, 0, diameter_pfp, diameter_pfp), fill=255)
@@ -51,7 +58,7 @@ def bikin_kartu_member(
         fill_color=(222, 130, 207),
         back_color="transparent",
     ).convert("RGBA")
-    qr_img = qr_img.resize((100, 100), Image.Resampling.LANCZOS)
+    qr_img = qr_img.resize((100, 100), resample_lanczos)
     
     base.paste(qr_img, (838, 458), qr_img)
     

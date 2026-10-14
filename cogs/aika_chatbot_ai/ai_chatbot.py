@@ -1,21 +1,21 @@
 """Berisi otak utama AI chatbot Aika."""
 
 import asyncio
-import os
 import time
 from datetime import datetime, timedelta, timezone
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from groq import APIError, BadRequestError, Groq, RateLimitError
 
+import config
 import database
 
 from ._config import (
     GROQ_API_KEY,
     ID_ROLE_REASONING,
     MAKS_GAMBAR_PER_CHAT,
+    MAKS_KONTEKS_CHANNEL,
     MAKS_TOKEN_RESPON,
     PERKIRAAN_TOKEN_DEFAULT,
     RE_BARIS_BARU_GANDA,
@@ -33,6 +33,7 @@ from ._utils import (
     ilangin_mention,
     masukin_ke_component_v2,
     proses_gambar,
+    sanitasi_matematika,
 )
 from ._views import buat_ulang_konteks_standalone
 
@@ -43,15 +44,18 @@ class AIPersona(commands.Cog):
         
         if not GROQ_API_KEY:
             raise RuntimeError("GROQ_API_KEY belum ditemukan di environment variable.")
+        
+        from groq import Groq
         self.ai_client = Groq(api_key=GROQ_API_KEY)
         self.model = "qwen/qwen3.8-27b"
         
-        channel_env = os.getenv("AIKA_CHANNEL_ID")
-        self.target_channel_id = int(channel_env) if channel_env and channel_env.isdigit() else 0
+        self.target_channel_id = config.pengaturan.id_channel_aika or 0
         
         self.user_chats = {}
         self.user_cooldowns = {}
-        self.max_memory_messages = 24
+        self.max_memory_messages = 75
+        self.channel_recent_messages = {}
+        self.max_channel_context = MAKS_KONTEKS_CHANNEL
         
         self.limiter = PembatasRate()
         self.last_api_meta = {}
@@ -102,7 +106,44 @@ class AIPersona(commands.Cog):
             self.user_chats[user_id] = []
         return self.user_chats[user_id]
     
-    async def bikin_respon(self, user_id:int, adalah_admin:bool, chat:list, contents:list, penalaran_nyala:bool=False):
+    def rekam_pesan_channel(self, channel_id:int, user_id:int, role:str, content:str):
+        if channel_id not in self.channel_recent_messages:
+            self.channel_recent_messages[channel_id] = []
+        
+        self.channel_recent_messages[channel_id].append({
+            "user_id": user_id,
+            "role": role,
+            "content": content
+        })
+        
+        if len(self.channel_recent_messages[channel_id]) > self.max_channel_context:
+            self.channel_recent_messages[channel_id] = self.channel_recent_messages[channel_id][-self.max_channel_context:]
+    
+    def dapatkan_konteks_channel(self, channel_id:int, current_user_id:int) -> list:
+        if channel_id not in self.channel_recent_messages:
+            return []
+        
+        context = []
+        for msg in self.channel_recent_messages[channel_id]:
+            role_display = "user" if msg["role"] == "user" else "assistant"
+            context.append({
+                "role": role_display,
+                "content": f"[User {msg['user_id']}]: {msg['content']}" if msg["role"] == "user" else msg["content"]
+            })
+        
+        return context
+    
+    async def bikin_respon(
+        self, 
+        user_id: int, 
+        adalah_admin: bool, 
+        chat: list, 
+        contents: list, 
+        penalaran_nyala: bool = False, 
+        channel_id:int | None=None
+    ):
+        from groq import RateLimitError
+        
         aman, alasan = self.limiter.cek_batas(perkiraan_token=PERKIRAAN_TOKEN_DEFAULT)
         if not aman:
             raise RateLimitError(f"Local Safety Net: {alasan}")
@@ -116,7 +157,14 @@ class AIPersona(commands.Cog):
         konteks_waktu = f"[Waktu pesan ini dikirim: {str_waktu}]"
         
         prompt_sistem = infokan_instruksi_sistem(self, adalah_admin, konteks_waktu, penalaran_nyala=penalaran_nyala)
-        isi_pesan = [prompt_sistem] + chat + [{"role": "user", "content": contents}]
+        
+        konteks_final = list(chat)
+        if channel_id and channel_id == self.target_channel_id:
+            konteks_channel = self.dapatkan_konteks_channel(channel_id, user_id)
+            if konteks_channel:
+                konteks_final = konteks_channel + chat
+        
+        isi_pesan = [prompt_sistem] + konteks_final + [{"role": "user", "content": contents}]
         
         waktu_mulai = time.time()  # noqa: F841
         
@@ -163,10 +211,14 @@ class AIPersona(commands.Cog):
             teks_keluaran = respon.choices[0].message.content or "Hmm... Aika lagi blank. 😵"
             
             teks_murni_dari_user = ekstrak_teksnya_doang(contents)
-            teks_riwayat_bot = RE_HAPUS_TAG_KONTEN.sub("", teks_keluaran).strip()
+            teks_riwayat_bot = hapus_alur_berpikir(RE_HAPUS_TAG_KONTEN.sub("", teks_keluaran).strip())
             
             chat.append({"role": "user", "content": teks_murni_dari_user.strip()})
             chat.append({"role": "assistant", "content": teks_riwayat_bot})
+            
+            if channel_id and channel_id == self.target_channel_id:
+                self.rekam_pesan_channel(channel_id, user_id, "user", teks_murni_dari_user.strip())
+                self.rekam_pesan_channel(channel_id, user_id, "assistant", teks_riwayat_bot)
             
             if len(chat) > self.max_memory_messages:
                 batas_potong = self.max_memory_messages - (self.max_memory_messages % 2)
@@ -254,9 +306,10 @@ class AIPersona(commands.Cog):
         adalah_admin = isinstance(interaction.user, discord.Member) and (
             interaction.user.guild_permissions.administrator or interaction.user.id == interaction.guild.owner_id
         )
-
+        
         try:
             teks_keluaran, _ = await self.bikin_respon(user_id, adalah_admin, chat_copy, contents)
+            teks_keluaran = sanitasi_matematika(teks_keluaran)
             teks_keluaran = ilangin_mention(teks_keluaran)
             
             self.user_chats[user_id] = chat_copy
@@ -340,7 +393,7 @@ class AIPersona(commands.Cog):
                     message.author,
                     "Masalah Intent",
                     "`contents` kosong, kemungkinan intent `Message Content` tidak aktif.",
-                    discord.Color.red()
+                    discord.Color(config.pengaturan.warna_merah)
                 )
             return
         
@@ -354,6 +407,7 @@ class AIPersona(commands.Cog):
         async with message.channel.typing():
             try:
                 teks_keluaran, chat_id = await self.bikin_respon(message.author.id, adalah_admin, chat, contents, penalaran_nyala=penalaran_nyala)
+                teks_keluaran = sanitasi_matematika(teks_keluaran)
                 
                 if penalaran_nyala:
                     teks_keluaran_clean = hapus_alur_berpikir(teks_keluaran)
@@ -405,55 +459,55 @@ class AIPersona(commands.Cog):
                         chat_id
                     )
                 
-            except RateLimitError as e:
-                if message.guild:
-                    self.bot.dispatch(
-                        "ai_log",
-                        message.guild,
-                        message.author,
-                        "Rate Limit Tercapai",
-                        f"Pesan dari {message.author.mention} memicu Rate Limit AI.\n`{e!s}`",
-                        discord.Color.red()
-                    )
-                
-                error_msg = str(e)
-                if "Local Safety Net:" in error_msg:
-                    clean_reason = error_msg.replace("Local Safety Net:", "").strip()
-                    reply = f"Aika lagi rehat bentar, ya... 😩\n`({clean_reason})`"
-                else:
-                    kecocokan = RE_WAKTU_RATE_LIMIT.search(error_msg)
-                    if kecocokan:
-                        hours = float(kecocokan.group(1) or 0)
-                        minutes = float(kecocokan.group(2) or 0)
-                        seconds = float(kecocokan.group(3) or 0)
-                        total_seconds = int((hours * 3600) + (minutes * 60) + seconds)
-                        target_time = int(time.time() + total_seconds)
-                        reply = f"Duh, bentar... Aika rehat sejenak, ya. Coba lagi <t:{target_time}:R> (<t:{target_time}:t>) 😩"
-                    else:
-                        reply = "Duh, bentar... Aika rehat sejenak, ya. 😩\n`(Rate limit reached)`"
-                
-                await message.reply(reply, allowed_mentions=discord.AllowedMentions.none())
-            
-            except BadRequestError as e:
-                print(f"[Groq] Bad request: {e}")
-                await message.reply("Hmm... Aika lagi belum bisa proses, ya, coba lagi nanti. 😵", allowed_mentions=discord.AllowedMentions.none())
-            
-            except APIError as e:
-                print(f"[Groq] API error: {e}")
-                if message.guild:
-                    self.bot.dispatch(
-                        "ai_log",
-                        message.guild,
-                        message.author,
-                        "API Error",
-                        f"Gagal memproses pesan dari {message.author.mention}.\n`{e!s}`",
-                        discord.Color.red()
-                    )
-                await message.reply("Ntar, ya... server AI lagi error... 😩", allowed_mentions=discord.AllowedMentions.none())
-            
             except Exception as e:  # noqa: BLE001
-                print(f"[Groq] Eror anomali: {type(e).__name__}: {e}")
-                await message.reply("Aika lagi error bentar... 😵", allowed_mentions=discord.AllowedMentions.none())
+                from groq import APIError, BadRequestError, RateLimitError
+                
+                if isinstance(e, RateLimitError):
+                    if message.guild:
+                        self.bot.dispatch(
+                            "ai_log",
+                            message.guild,
+                            message.author,
+                            "Rate Limit Tercapai",
+                            f"Pesan dari {message.author.mention} memicu Rate Limit AI.\n`{e!s}`",
+                            discord.Color(config.pengaturan.warna_merah)
+                        )
+                    
+                    error_msg = str(e)
+                    if "Local Safety Net:" in error_msg:
+                        clean_reason = error_msg.replace("Local Safety Net:", "").strip()
+                        reply = f"Aika lagi rehat bentar, ya... 😩\n`({clean_reason})`"
+                    else:
+                        kecocokan = RE_WAKTU_RATE_LIMIT.search(error_msg)
+                        if kecocokan:
+                            hours = float(kecocokan.group(1) or 0)
+                            minutes = float(kecocokan.group(2) or 0)
+                            seconds = float(kecocokan.group(3) or 0)
+                            total_seconds = int((hours * 3600) + (minutes * 60) + seconds)
+                            target_time = int(time.time() + total_seconds)
+                            reply = f"Duh, bentar... Aika rehat sejenak, ya. Coba lagi <t:{target_time}:R> (<t:{target_time}:t>) 😩"
+                        else:
+                            reply = "Duh, bentar... Aika rehat sejenak, ya. 😩\n`(Rate limit reached)`"
+                    
+                    await message.reply(reply, allowed_mentions=discord.AllowedMentions.none())
+                elif isinstance(e, BadRequestError):
+                    print(f"[Groq] Bad request: {e}")
+                    await message.reply("Hmm... Aika lagi belum bisa proses, ya, coba lagi nanti. 😵", allowed_mentions=discord.AllowedMentions.none())
+                elif isinstance(e, APIError):
+                    print(f"[Groq] API error: {e}")
+                    if message.guild:
+                        self.bot.dispatch(
+                            "ai_log",
+                            message.guild,
+                            message.author,
+                            "API Error",
+                            f"Gagal memproses pesan dari {message.author.mention}.\n`{e!s}`",
+                            discord.Color(config.pengaturan.warna_merah)
+                        )
+                    await message.reply("Ntar, ya... server AI lagi error... 😩", allowed_mentions=discord.AllowedMentions.none())
+                else:
+                    print(f"[Groq] Eror anomali: {type(e).__name__}: {e}")
+                    await message.reply("Aika lagi error bentar... 😵", allowed_mentions=discord.AllowedMentions.none())
 
 
 async def setup(bot):

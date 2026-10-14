@@ -1,4 +1,3 @@
-import asyncio
 
 import aiohttp
 import discord
@@ -92,7 +91,7 @@ async def cek_koneksi_robtop(session:aiohttp.ClientSession) -> bool:
         async with session.post(url_ping, data=muatan, headers=header, timeout=aiohttp.ClientTimeout(total=4)) as resp:
             tek = await resp.text()
             return resp.status == 200 and tek != "-1"
-    except (aiohttp.ClientError, asyncio.TimeoutError):
+    except (TimeoutError, aiohttp.ClientError):
         return False
 
 async def cari_profil_gd(session: aiohttp.ClientSession, username: str) -> tuple[int, int, str] | None:
@@ -105,7 +104,7 @@ async def cari_profil_gd(session: aiohttp.ClientSession, username: str) -> tuple
                     return None
                 return int(data.get("accountID", 0)), int(data.get("playerID", 0)), data.get("username")
             return None
-    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
+    except (TimeoutError, aiohttp.ClientError, ValueError) as e:
         print(f"[Aika] GD Leaderboard: error saat mencari profil {username}: {e}")
         return None
 
@@ -149,7 +148,7 @@ async def baca_data_tunggal_player_async(session: aiohttp.ClientSession, player_
                 return obj_player, player_dict
             return None, player_dict
         
-    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError, KeyError) as err:
+    except (TimeoutError, aiohttp.ClientError, ValueError, KeyError) as err:
         print(f"[Aika] GD Leaderboard: gagal membaca {target} -> {err}")
         return None, player_dict
     
@@ -184,5 +183,5 @@ async def baca_pesan_masuk_gd(session:aiohttp.ClientSession) -> list[dict]:
                 })
             return daftar_pesan
         
-    except (aiohttp.ClientError, asyncio.TimeoutError, IndexError, ValueError):
+    except (TimeoutError, aiohttp.ClientError, IndexError, ValueError):
         return []

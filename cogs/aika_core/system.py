@@ -6,6 +6,8 @@ import discord
 import psutil
 from discord.ext import commands
 
+from config import pengaturan
+
 waktu_mulai = time.time()
 
 # Inisialisasi pelacakan CPU proses awal
@@ -20,7 +22,7 @@ def baca_limit_ram_container() -> float:
     for jalur in jalur_cgroup:
         if os.path.exists(jalur):
             try:
-                with open(jalur, "r") as f:
+                with open(jalur, "r", encoding="utf-8") as f:
                     val = f.read().strip()
                     if val != "max" and val.isdigit():
                         batas_bytes = int(val)
@@ -126,7 +128,7 @@ class Sistem(commands.Cog):
             "```"
         )
         
-        embed = discord.Embed(title="Rincian Sistem Aika", description=sys_info, color=0xD675C1)
+        embed = discord.Embed(title="Rincian Sistem Aika", description=sys_info, color=pengaturan.warna_aika)
         
         avatar = self.bot.user.display_avatar.url
         embed.set_author(name=str(self.bot.user), icon_url=avatar)

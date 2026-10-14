@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import discord
 from discord.ext import commands
 
+import config
+
 
 @dataclass
 class Saya:
@@ -23,7 +25,7 @@ class About(commands.Cog):
         embed = discord.Embed(
             title = "Tentang Bot",
             description = "Halo, aku cuma maskot server ini yang kebetulan ditugasin ngejagain. Namaku Aika Yokina. Aku berumur 17 tahun. Salam kenal. Untuk info lebih lanjut soal diriku, bisa cek di <#1533541868653117571>.",
-            color = 0xDE82CF
+            color = config.pengaturan.warna_aika
         )
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/863959650448703538/1540201066455371888/bunga.png?ex=6a891785&is=6a87c605&hm=69d799fb0347fd7461acc9e4aeaaa32563dbaf31a05cc239f6ae10301e6dba47&")
         embed.set_image(url="https://cdn.discordapp.com/attachments/863959650448703538/1541536432685060196/latihan_affinity.png?ex=6a8f44ad&is=6a8df32d&hm=cfbc261b086028328945ec3289152628efcc8a18a229b2897f903cecdd3f757d&")

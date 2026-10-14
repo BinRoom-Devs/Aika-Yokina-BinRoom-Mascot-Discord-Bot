@@ -1,277 +1,299 @@
+from __future__ import annotations
+
 import asyncio
 import io
-from functools import lru_cache
+import logging
+import time
+from dataclasses import dataclass
 
 import aiohttp
 import discord
 from discord.ext import commands
-from PIL import Image
+
+from config import pengaturan
+
+log = logging.getLogger(__name__)
+
+UKURAN_MAKS = 15 * 1024 * 1024
+CACHE_TTL = 3600
+CACHE_MAKS = 256
 
 
-class LihatProfil(discord.ui.LayoutView):
-    def __init__(self, cog:"PFP", ctx:commands.Context, user:discord.User|discord.Member, member:discord.Member|None, asset_type:str):
-        super().__init__(timeout=180)
-        self.cog = cog
-        self.ctx = ctx
-        self.user = user
-        self.member = member
-        self.asset_type = asset_type
-        self.message = None
-        
-        if self.asset_type == "avatar":
-            self.has_server = bool(self.member and self.member.guild_avatar)
-            self.current_mode = "server" if self.has_server else "utama"
-        else:
-            self.has_server = bool(self.member and getattr(self.member, "guild_banner", None))
-            self.current_mode = "server" if self.has_server else "utama"
+@dataclass(frozen=True, slots=True)
+class InfoAset:
+    warna: int
+    lebar: int = 0
+    tinggi: int = 0
+    animasi: bool = False
+    frame: int = 1
 
-    def _cari_aset_utama(self, mode:str) -> discord.Asset | None:
-        if self.asset_type == "avatar":
-            if mode == "server" and self.member and self.member.guild_avatar:
-                return self.member.guild_avatar
-            return self.user.avatar or self.user.default_avatar
-        else:
-            if mode == "server" and self.member and getattr(self.member, "guild_banner", None):
-                return self.member.guild_banner
-            return getattr(self.user, "banner", None)
 
-    async def buat_container(self, tombol_mati:bool=False) -> discord.ui.Container:
-        asset = self._cari_aset_utama(self.current_mode)
-        
-        if not asset:
-            accent = getattr(self.user, "accent_color", None)
-            if accent:
-                warna = accent.value
-                hex_str = f"#{warna:06x}"
-                container = discord.ui.Container(accent_color=warna)
-                container.add_item(discord.ui.TextDisplay(content="## Banner Tidak Ada"))
-                container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-                container.add_item(discord.ui.TextDisplay(content=f"{self.user.mention} tidak punya gambar banner, tetapi menggunakan warna solid **{hex_str.upper()}**."))
-            else:
-                container = discord.ui.Container()
-                container.add_item(discord.ui.TextDisplay(content="## Banner Tidak Ada"))
-                container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-                container.add_item(discord.ui.TextDisplay(content=f"{self.user.mention} tidak memiliki banner custom maupun warna aksen."))
-            return container
+def _info_gagal() -> InfoAset:
+    return InfoAset(warna=pengaturan.warna_aika)
 
-        try:
-            link_hd = asset.with_size(4096).url
-        except (discord.InvalidArgument, AttributeError):
-            link_hd = asset.url
-        warna, lebar_hd, tinggi_hd, beranimasi, total_frame = await self.cog.proses_aset_cached(link_hd)
 
-        str_format = "GIF" if beranimasi else "PNG"
-        jenis_label = "Foto Profilnya" if self.asset_type == "avatar" else "Foto Sampulnya"
-        mode_label = "(Dalam Server)" if self.current_mode == "server" else ''
-        
-        container = discord.ui.Container(accent_color=warna)
-        container.add_item(discord.ui.TextDisplay(content=f"## {jenis_label} si {self.user.mention} {mode_label}"))
-        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(discord.ui.MediaGallery(discord.MediaGalleryItem(link_hd)))
-        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+def _detail_aset(info:InfoAset, tipe:str) -> list[str]:
+    bagian = ["GIF" if info.animasi else "PNG"]
+    
+    if tipe == "avatar":
+        if info.tinggi:
+            bagian.append(f"{info.tinggi}p")
+    elif info.lebar and info.tinggi:
+        bagian.append(f"{info.lebar}x{info.tinggi}p")
+    
+    if info.animasi and info.frame > 1:
+        bagian.append(f"{info.frame} frames")
+    
+    return bagian
 
-        frames = f"  ·  {total_frame} frames" if beranimasi else ''
 
-        if self.asset_type == "avatar":
-            ukuran = f"  ·  {tinggi_hd}p" if tinggi_hd else ''
-            key = f"  ·  `{asset.key}`" if asset.key else ''
-        else:
-            ukuran = f"  ·  {lebar_hd}x{tinggi_hd}p" if lebar_hd and tinggi_hd else ''
-            key = f"  ·  `{asset.key}`" if (lebar_hd and lebar_hd > 500) else ''
-
-        
-        footer = f"-# [Link]({link_hd})  ·  {str_format}{ukuran}{frames}{key}"
-        container.add_item(discord.ui.TextDisplay(content=footer))
-
-        if self.has_server and not tombol_mati:
-            action_row = discord.ui.ActionRow()
-            kalo_mode_server = (self.current_mode == "server")
-            
-            tmbol_server = discord.ui.Button(
-                label = "Server", 
-                style = discord.ButtonStyle.primary if kalo_mode_server else discord.ButtonStyle.secondary,
-                disabled = kalo_mode_server,
-                custom_id = "tmbol_server"
-            )
-            tmbol_utama = discord.ui.Button(
-                label = "Utama", 
-                style = discord.ButtonStyle.primary if not kalo_mode_server else discord.ButtonStyle.secondary,
-                disabled = not kalo_mode_server,
-                custom_id = "tmbol_utama"
-            )
-
-            tmbol_server.callback = self._klik_tombol_server
-            tmbol_utama.callback = self._klik_tombol_utama
-
-            action_row.add_item(tmbol_server)
-            action_row.add_item(tmbol_utama)
-            container.add_item(action_row)
-        return container
-
-    async def _klik_tombol_server(self, interaction:discord.Interaction):
-        if interaction.user.id != self.ctx.author.id:
-            return await interaction.response.send_message("Yang bisa mencet tombol cuma yang ngeksekusi command-nya 💢", ephemeral=True)
-        
-        if self.current_mode == "server":
-            return await interaction.response.defer()
-
-        self.current_mode = "server"
-        await interaction.response.defer()
-        
-        self.clear_items()
-        container = await self.buat_container()
-        self.add_item(container)
-        await interaction.message.edit(view=self)
-
-    async def _klik_tombol_utama(self, interaction:discord.Interaction):
-        if interaction.user.id != self.ctx.author.id:
-            return await interaction.response.send_message("Yang bisa mencet tombol cuma yang ngeksekusi command-nya 💢", ephemeral=True)
-
-        if self.current_mode == "utama":
-            return await interaction.response.defer()
-
-        self.current_mode = "utama"
-        await interaction.response.defer()
-
-        self.clear_items()
-        container = await self.buat_container()
-        self.add_item(container)
-        await interaction.message.edit(view=self)
-
-    async def on_timeout(self):
-        try:
-            if self.message and self.has_server:
-                self.clear_items()
-                container = await self.buat_container(tombol_mati=True)
-                self.add_item(container)
-                await self.message.edit(view=self)
-        except discord.HTTPException:
-            pass
+def _container_pesan(judul:str, isi:str, warna:int|None=None) -> discord.ui.Container:
+    container = discord.ui.Container(accent_color=warna) \
+        if warna is not None else discord.ui.Container()
+    container.add_item(discord.ui.TextDisplay(content=judul))
+    container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+    container.add_item(discord.ui.TextDisplay(content=isi))
+    return container
 
 
 class PFP(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._session: aiohttp.ClientSession | None = None
-
+        self._cache: dict[str, tuple[float, InfoAset]] = {}
+    
     @property
     def session(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession()
+            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10))
         return self._session
-
+    
     async def cog_unload(self):
         if self._session and not self._session.closed:
             await self._session.close()
-
+    
+    # ------------------------------------------------------------------
+    # Pemrosesan gambar
+    # ------------------------------------------------------------------
     @staticmethod
-    @lru_cache(maxsize=128)
-    def _proses_gambar_blocking(byte_gambar:bytes) -> tuple[int,int,int,bool,int]:
+    def _proses(data: bytes) -> InfoAset:
+        from PIL import Image
+        
         try:
-            with Image.open(io.BytesIO(byte_gambar)) as img:
+            with Image.open(io.BytesIO(data)) as img:
                 lebar, tinggi = img.size
-                total_frame = getattr(img, "n_frames", 1)
-                beranimasi = getattr(img, "is_animated", False) and total_frame > 1
-
-                thumb = img.convert("RGB").resize((32,32), Image.Resampling.NEAREST)
-                quantized = thumb.quantize(colors=1)
-                palette = quantized.getpalette()
+                frame = getattr(img, "n_frames", 1)
                 
-                warna = 0xD675C1
-                if palette:
-                    r,g,b = palette[:3]
-                    warna = (r<<16) + (g<<8) + b
-
-                return warna, lebar, tinggi, beranimasi, total_frame
-        except (Image.UnidentifiedImageError, OSError, ValueError):
-            pass
-        return 0xD675C1, 0, 0, False, 1
+                try:
+                    resample_nearest = Image.Resampling.NEAREST
+                    resample_box = Image.Resampling.BOX
+                except AttributeError:
+                    resample_nearest = Image.NEAREST
+                    resample_box = Image.BOX
+                
+                kecil = img.resize((64, 64), resample_nearest).convert("RGB")
+                r, g, b = kecil.resize((1, 1), resample_box).getpixel((0, 0))
+                
+                return InfoAset((r << 16) | (g << 8) | b, lebar, tinggi, frame > 1, frame)
+            
+        except (Image.UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError):
+            return _info_gagal()
     
-    async def proses_aset_cached(self, link_gambar:str) -> tuple[int,int,int,bool,int]:
+    async def _unduh_dan_proses(self, url:str) -> InfoAset:
         try:
-            async with self.session.get(link_gambar) as respon:
+            async with self.session.get(url) as respon:
                 if respon.status != 200:
-                    return 0xD675C1, 0, 0, False, 1
-                byte_gambar = await respon.read()
-            return await asyncio.to_thread(self._proses_gambar_blocking, byte_gambar)
-        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-            print(f"[Aika] Foto profil: gagal memproses gambar ({e})")
-            return 0xD675C1, 0, 0, False, 1
+                    return _info_gagal()
+                if respon.content_length and respon.content_length > UKURAN_MAKS:
+                    return _info_gagal()
+                data = await respon.read()
+            if len(data) > UKURAN_MAKS:
+                return _info_gagal()
+            return await asyncio.to_thread(self._proses, data)
+        except (TimeoutError, aiohttp.ClientError) as e:
+            log.warning("Foto profil: gagal memproses gambar (%s)", e)
+            return _info_gagal()
     
-    async def _putuskan_user_dan_member(self, ctx:commands.Context, target:discord.Member|discord.User|None):
+    async def info_aset(self, url:str|None) -> InfoAset | None:
+        if not url:
+            return None
+        
+        hit = self._cache.get(url)
+        if hit and hit[0] > time.monotonic():
+            return hit[1]
+        
+        info = await self._unduh_dan_proses(url)
+        
+        if info.lebar:
+            if len(self._cache) >= CACHE_MAKS:
+                self._cache.pop(next(iter(self._cache)))
+            self._cache[url] = (time.monotonic() + CACHE_TTL, info)
+        return info
+    
+    # ------------------------------------------------------------------
+    # Pembuat tampilan
+    # ------------------------------------------------------------------
+    async def buat_container(
+        self,
+        user: discord.User,
+        member: discord.Member | None,
+        tipe: str,
+    ) -> discord.ui.Container:
+        if tipe == "avatar":
+            utama = user.avatar or user.default_avatar
+            server = member.guild_avatar if member else None
+            jenis_label = "Foto Profilnya"
+        else:
+            utama = getattr(user, "banner", None)
+            server = getattr(member, "guild_banner", None)
+            jenis_label = "Foto Sampulnya"
+        
+        if utama is None and server is None:
+            accent = getattr(user, "accent_color", None)
+            if accent:
+                hex_str = f"#{accent.value:06X}"
+                return _container_pesan(
+                    "## Banner Tidak Ada",
+                    f"{user.mention} tidak punya gambar banner, tetapi menggunakan warna solid **{hex_str}**.",
+                    warna=accent.value,
+                )
+            return _container_pesan(
+                "## Banner Tidak Ada",
+                f"{user.mention} tidak memiliki banner custom maupun warna aksen.",
+            )
+        
+        link_u = utama.with_size(4096).url if utama is not None else None
+        link_s = server.with_size(4096).url if server is not None else None
+        
+        info_u, info_s = await asyncio.gather(self.info_aset(link_u), self.info_aset(link_s))
+        
+        if link_u and link_s:
+            container = discord.ui.Container()
+        else:
+            warna_info = info_u or info_s
+            container = discord.ui.Container(accent_color=warna_info.warna if warna_info else None)
+        
+        container.add_item(discord.ui.TextDisplay(content=f"## {jenis_label} si {user.mention}"))
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        
+        items = [discord.MediaGalleryItem(link) for link in (link_u, link_s) if link]
+        if tipe == "banner" and len(items) > 1:
+            for item in items:
+                container.add_item(discord.ui.MediaGallery(item))
+        else:
+            container.add_item(discord.ui.MediaGallery(*items))
+        
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        
+        if info_u and info_s:
+            kiri, kanan = ("Atas", "Bawah") if tipe == "banner" else ("Kiri", "Kanan")
+            footer = (
+                f"-# {kiri}: global ({', '.join(_detail_aset(info_u, tipe))})"
+                f"  ·  {kanan}: server ({', '.join(_detail_aset(info_s, tipe))})"
+            )
+        elif info_s:
+            footer = f"-# Server: {', '.join(_detail_aset(info_s, tipe))}"
+        else:
+            bagian = [f"[Link Utama]({link_u})", *_detail_aset(info_u, tipe)]
+            key = getattr(utama, "key", None)
+            if key and (tipe == "avatar" or info_u.lebar > 500):
+                bagian.append(f"`{key}`")
+            footer = "-# " + "  ·  ".join(bagian)
+        
+        container.add_item(discord.ui.TextDisplay(content=footer))
+        return container
+    
+    # ------------------------------------------------------------------
+    # Helper command
+    # ------------------------------------------------------------------
+    async def _putuskan_user_dan_member(
+        self,
+        target: discord.Member | discord.User | None,
+        ctx: commands.Context,
+        perlu_banner: bool,
+    ) -> tuple[discord.User, discord.Member | None]:
         target_obj = target or ctx.author
         member_obj = target_obj if isinstance(target_obj, discord.Member) else None
-
+        
         if isinstance(target_obj, discord.User):
             user_obj = target_obj
         else:
-            user_obj = target_obj._user if hasattr(target_obj, "_user") else target_obj
-
-        if getattr(user_obj, "banner", None) is None:
+            user_obj = getattr(target_obj, "_user", target_obj)
+        
+        if perlu_banner and getattr(user_obj, "banner", None) is None:
             try:
                 user_obj = await self.bot.fetch_user(target_obj.id)
             except discord.HTTPException:
                 pass
-
+        
         return user_obj, member_obj
-
+    
+    async def _kirim(
+        self,
+        ctx: commands.Context,
+        target: discord.Member | discord.User | None,
+        tipe: str,
+    ):
+        await ctx.defer()
+        
+        user_obj, member_obj = await self._putuskan_user_dan_member(
+            target, ctx, perlu_banner=(tipe == "banner")
+        )
+        container = await self.buat_container(user_obj, member_obj, tipe)
+        
+        view = discord.ui.LayoutView(timeout=None)
+        view.add_item(container)
+        await ctx.send(view=view, allowed_mentions=discord.AllowedMentions.none())
+    
+    # ------------------------------------------------------------------
+    # Command
+    # ------------------------------------------------------------------
     @commands.hybrid_command(
         name="avatar",
         description="Nampilin foto profil orang.",
-        aliases=["pfp", "pp", "icon"]
+        aliases=["pfp", "pp", "icon"],
     )
+    @discord.app_commands.describe(member="Member atau user yang mau diliat foto profilnya (opsional)")
     async def avatar(self, ctx:commands.Context, member:discord.Member|discord.User=None):
-        await ctx.defer()
-
-        user_obj, member_obj = await self._putuskan_user_dan_member(ctx, member)
-
-        view = LihatProfil(self, ctx, user_obj, member_obj, asset_type="avatar")
-        container = await view.buat_container()
-        view.add_item(container)
-
-        view.message = await ctx.send(view=view, allowed_mentions=discord.AllowedMentions.none())
-
+        await self._kirim(ctx, member, "avatar")
+    
     @commands.hybrid_command(
-        name="banner", 
+        name="banner",
         description="Nampilin foto sampul/banner profil orang.",
-        aliases=["bn"]
+        aliases=["bn"],
     )
     @discord.app_commands.describe(member="Member atau user yang mau diliat bannernya (opsional)")
     async def banner(self, ctx:commands.Context, member:discord.Member|discord.User=None):
-        await ctx.defer()
-
-        user_obj, member_obj = await self._putuskan_user_dan_member(ctx, member)
-
-        view = LihatProfil(self, ctx, user_obj, member_obj, asset_type="banner")
-        container = await view.buat_container()
-        view.add_item(container)
-
-        view.message = await ctx.send(view=view, allowed_mentions=discord.AllowedMentions.none())
-
-    @avatar.error
-    @banner.error
-    async def profile_error(self, ctx:commands.Context, error:commands.CommandError):
-        if isinstance(error, commands.CommandInvokeError):
+        await self._kirim(ctx, member, "banner")
+    
+    # ------------------------------------------------------------------
+    # Error handler (berlaku untuk semua command di cog ini)
+    # ------------------------------------------------------------------
+    async def cog_command_error(self, ctx:commands.Context, error:Exception):
+        while hasattr(error, "original"):
             error = error.original
-
+        
         if isinstance(error, commands.MemberNotFound):
             judul = "❌ Member tidak ditemukan"
             pesan = "Pastikan nama, ID, atau @mention sudah benar."
         elif isinstance(error, commands.UserNotFound):
             judul = "❌ User tidak ditemukan"
             pesan = f"User `{error.argument}` tidak ditemukan. Coba lagi."
+        elif isinstance(error, commands.BadUnionArgument):
+            judul = "❌ User tidak ditemukan"
+            pesan = "Pastikan nama, ID, atau @mention sudah benar."
         else:
+            log.error(
+                "Error tak terduga di command %s",
+                ctx.command,
+                exc_info=(type(error), error, error.__traceback__),
+            )
             judul = "❌ Terjadi Kesalahan"
-            pesan = f"Ada error internal:\n`{type(error).__name__}: {error}`"
-
-        container = discord.ui.Container(accent_color=0xDB2E43)
-        container.add_item(discord.ui.TextDisplay(content=f"### {judul}"))
-        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(discord.ui.TextDisplay(content=pesan))
-
-        view = discord.ui.LayoutView()
-        view.add_item(container)
-
+            pesan = "Ada error internal. Coba lagi sebentar lagi ya."
+        
+        view = discord.ui.LayoutView(timeout=None)
+        view.add_item(_container_pesan(f"### {judul}", pesan, warna=pengaturan.warna_merah))
+        
         try:
             await ctx.send(view=view)
         except discord.HTTPException:

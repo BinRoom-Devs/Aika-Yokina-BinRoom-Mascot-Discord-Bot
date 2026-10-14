@@ -6,6 +6,8 @@ import sys
 import discord
 from discord.ext import commands
 
+from config import pengaturan
+
 TAMPUNGAN_LOG = collections.deque(maxlen=100)
 
 
@@ -116,11 +118,11 @@ class LogTerminal(commands.Cog):
             await ctx.send("Belum ada log yang tersimpan di memori.", ephemeral=True) 
             return
         
-        warna_cont = discord.Color.from_str("#D675C1") 
+        warna_cont = discord.Color(pengaturan.warna_aika) 
         pola_deteksi_eror = r"(Traceback|Error|Exception|KeyboardInterrupt|SystemExit|HTTPException|Forbidden|NotFound|400|401|403|404|429|500|\[Groq\]|Gagal|eror)" 
         
         if any(re.search(pola_deteksi_eror, baris, re.IGNORECASE) for baris in output_mentah): 
-            warna_cont = 0xDD2E44 #ganti jadi merah kalo ada eror
+            warna_cont = pengaturan.warna_merah
         
         log_terformat = self.format_log_ansi("\n".join(output_mentah)) 
         

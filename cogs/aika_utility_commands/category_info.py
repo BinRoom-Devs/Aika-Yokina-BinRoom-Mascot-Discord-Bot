@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from config import pengaturan
+
 
 class CategoryInfo(commands.Cog):
     def __init__(self, bot:commands.Bot):
@@ -26,7 +28,7 @@ class CategoryInfo(commands.Cog):
         
         thumb_url = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/1f4c1.png"  # 📁
         
-        container = discord.ui.Container(accent_color=0xD675C1)
+        container = discord.ui.Container(accent_color=pengaturan.warna_aika)
         
         header_1 = f"### ℹ️  Informasi Kategori — {cat.name}"
         container.add_item(discord.ui.TextDisplay(content=header_1))

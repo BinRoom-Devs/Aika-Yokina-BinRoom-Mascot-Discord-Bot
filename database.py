@@ -8,6 +8,8 @@ from typing import Any
 
 import aiosqlite
 
+import config
+
 try:
     import orjson
     
@@ -22,10 +24,7 @@ except ImportError:
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_PATH = os.getenv(
-    "DATABASE_PATH",
-    os.path.join(BASE_DIR, "data", "aika.db")
-)
+DATABASE_PATH = str(config.pengaturan.jalur_database_terselesaikan)
 
 
 def _read_json_file(file_path: str) -> Any:
@@ -583,15 +582,20 @@ async def save_downtime_history(riwayat: list[dict[str, Any]]) -> None:
 # Statistik Harian
 # -----------------------------------------------------------------------------
 
-async def get_daily_stats() -> dict[str, Any]:
-    """Ngebaca data statistik harian dari database."""
+async def get_daily_stats() -> tuple[dict[str, Any], str | None]:
+    """Ngebaca data statistik harian beserta tanggal rekamannya dari database."""
     async with get_connection() as conn:
         cursor = await conn.execute("SELECT key, value FROM daily_stats")
         rows = await cursor.fetchall()
+        
         result: dict[str, Any] = {}
+        tanggal_terakhir: str | None = None
+        
         for r in rows:
             k, v = r["key"], r["value"]
-            if k == "emoji_digunakan":
+            if k == "_tanggal_terakhir":
+                tanggal_terakhir = v
+            elif k == "emoji_digunakan":
                 try:
                     result[k] = json_loads(v)
                 except Exception:  # noqa: BLE001
@@ -601,12 +605,14 @@ async def get_daily_stats() -> dict[str, Any]:
                     result[k] = int(v)
                 except (ValueError, TypeError):
                     result[k] = v
-        return result
+                    
+        return result, tanggal_terakhir
 
 
-async def save_daily_stats(data_stats: dict[str, Any]) -> None:
-    """Nyimpan atau ngupdate statistik harian ke database."""
-    batch = []
+async def save_daily_stats(data_stats:dict[str,Any], tanggal_str:str) -> None:
+    """Nyimpan statistik harian dan tanggal rekamannya ke database."""
+    batch = [("_tanggal_terakhir", tanggal_str)]
+    
     for k, v in data_stats.items():
         if isinstance(v, (dict, list, collections.Counter)):
             val_str = json_dumps(dict(v) if isinstance(v, collections.Counter) else v)

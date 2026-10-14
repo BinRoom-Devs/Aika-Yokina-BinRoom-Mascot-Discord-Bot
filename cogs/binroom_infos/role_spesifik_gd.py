@@ -1,4 +1,4 @@
-from pathlib import Path  # noqa: N999
+from pathlib import Path
 
 import discord
 from discord.ext import commands
