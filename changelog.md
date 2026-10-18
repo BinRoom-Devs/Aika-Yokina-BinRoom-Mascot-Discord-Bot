@@ -5,7 +5,7 @@ Perubahan pada bot akan dicatat di file ini.
 Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [pemversian semantik (*Semantic Versioning*)](https//semver.org/spec/v2.0.0.html).
 
 
-## v3.3.1 - ? Okt 2026
+## v3.3.1 - 18 Okt 2026
 ### Perubahan
 - Semua metode pengiriman pesan (alias tanggapan atas command user) diubah dari `send` biasa jadi `reply`.
 
