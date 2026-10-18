@@ -104,7 +104,7 @@ class AICommands(commands.Cog):
         
         ai_cog = self.get_ai_cog()
         if not ai_cog:
-            await ctx.send("❌ Error: Cog AIPersona belum dimuat.", ephemeral=True)
+            await ctx.reply("❌ Error: Cog AIPersona belum dimuat.", ephemeral=True)
             return
         
         meta = getattr(ai_cog, "last_api_meta", {})
@@ -153,7 +153,7 @@ class AICommands(commands.Cog):
         else:
             embed.description = "*Menunggu header respon pertama dari API...*"
         
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
     
     @ai.command(
         name="statistik",
@@ -166,7 +166,7 @@ class AICommands(commands.Cog):
         ai_cog = self.get_ai_cog()
         if not ai_cog:
             print("[Aika] Command dibatalkan karena cog AIPersona tidak terdeteksi.")
-            await ctx.send("❌ Error: Cog AIPersona belum dimuat.", ephemeral=True)
+            await ctx.reply("❌ Error: Cog AIPersona belum dimuat.", ephemeral=True)
             return
         
         meta = getattr(ai_cog, "last_api_meta", {})
@@ -276,7 +276,7 @@ class AICommands(commands.Cog):
         
         view = StatsButtonsView()
         print("[Aika] Membalas embed statistik")
-        await ctx.send(embed=embed, view=view)
+        await ctx.reply(embed=embed, view=view)
     
     @ai.command(
         name="memory",
@@ -290,7 +290,7 @@ class AICommands(commands.Cog):
             if ctx.interaction:
                 await ctx.interaction.response.send_message(pesan, ephemeral=True)
             else:
-                await ctx.send(pesan)
+                await ctx.reply(pesan)
             return
         
         if ctx.author.id not in ai_cog.user_chats:
@@ -298,7 +298,7 @@ class AICommands(commands.Cog):
             if ctx.interaction:
                 await ctx.interaction.response.send_message(msg, ephemeral=True)
             else:
-                await ctx.send(msg, delete_after=12)
+                await ctx.reply(msg, delete_after=12)
             return
         
         chat = ai_cog.user_chats[ctx.author.id]
@@ -333,7 +333,7 @@ class AICommands(commands.Cog):
         if ctx.interaction:
             await ctx.interaction.response.send_message(content=flavor, embed=embed, ephemeral=True)
         else:
-            await ctx.send(content=flavor, embed=embed)
+            await ctx.reply(content=flavor, embed=embed)
     
     @ai.command(
         name="memory-reset",
@@ -343,11 +343,11 @@ class AICommands(commands.Cog):
     async def reset_memori(self, ctx:commands.Context):
         ai_cog = self.get_ai_cog()
         if not ai_cog:
-            await ctx.send("❌ Eror: perintah ini belum terhubung dengan modul chat AI.", ephemeral=True)
+            await ctx.reply("❌ Eror: perintah ini belum terhubung dengan modul chat AI.", ephemeral=True)
             return
         
         if ctx.author.id not in ai_cog.user_chats:
-            await ctx.send("Mau reset apa? Aika aja belum tau apapun soalmu. 🧐", ephemeral=True, delete_after=12)
+            await ctx.reply("Mau reset apa? Aika aja belum tau apapun soalmu. 🧐", ephemeral=True, delete_after=12)
             return
         
         timeout_timestamp = int(time.time() + 30)
@@ -363,7 +363,7 @@ class AICommands(commands.Cog):
             await ctx.interaction.response.send_message(embed=embed, view=view, ephemeral=True)
             view.message = await ctx.interaction.original_response()
         else:
-            view.message = await ctx.send(embed=embed, view=view)
+            view.message = await ctx.reply(embed=embed, view=view)
     
 
 async def setup(bot:commands.Bot):

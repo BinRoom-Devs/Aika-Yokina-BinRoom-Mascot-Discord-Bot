@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 import database
 from config import pengaturan
 
-ID_CHANNEL_LOG = pengaturan.id_channel_logging
+ID_CHANNEL_LOG = int(pengaturan.id_channel_logging) if pengaturan.id_channel_logging else 0
 WIB = timezone(timedelta(hours=7))
 
 HARI_INDONESIA = {
@@ -27,6 +27,8 @@ class StatistikHarian(commands.Cog):
         self.bot = bot
         self.data_stats = self._default_stats()
         self.vc_join_times: dict[int, datetime] = {}
+        self.tanggal_aktif: str = datetime.now(WIB).strftime("%Y-%m-%d")
+        self._tanggal_laporan_tertunda: str | None = None
     
     async def cog_load(self):
         await self._muat_statistik()
@@ -44,9 +46,11 @@ class StatistikHarian(commands.Cog):
             "pesan_dihapus": 0,
             "pesan_diedit": 0,
             "media_dikirim": 0,
+            
             # field 2: reaction & emoji
             "emoji_digunakan": collections.Counter(),
             "reaction_ditambahkan": 0,
+            
             # field 3: keanggotaan
             "member_bergabung": 0,
             "member_keluar": 0,
@@ -58,12 +62,14 @@ class StatistikHarian(commands.Cog):
             "member_ubah_nickname": 0,
             "member_berganti_role": 0,
             "member_boost_server": 0,
+            
             # field 4: aktivitas voice
             "vc_bergabung": 0,
             "vc_keluar": 0,
             "vc_durasi_total": 0,
             "vc_jumlah_sesi": 0,
             "vc_share_screen": 0,
+            
             # field 5: pengaturan server
             "channel_dibuat": 0,
             "channel_nama_diubah": 0,
@@ -85,10 +91,32 @@ class StatistikHarian(commands.Cog):
             "event_dibatalkan": 0,
         }
     
+    def _sinkronkan_member_vc_aktif(self):
+        """Nyatatin waktu join buat member yg udah di vc pas bot baru hidup"""
+        sekarang = datetime.now(UTC)
+        for guild in self.bot.guilds:
+            for vc in guild.voice_channels:
+                for member in vc.members:
+                    if not member.bot and member.id not in self.vc_join_times:
+                        self.vc_join_times[member.id] = sekarang
+    
+    def _flush_durasi_vc_aktif(self):
+        """Ngitung durasi VC buat member yg masih di VC sebelum laporannya dibuat/di-reset."""
+        sekarang = datetime.now(UTC)
+        for user_id, waktu_join in list(self.vc_join_times.items()):
+            durasi = int((sekarang - waktu_join).total_seconds())
+            if durasi > 0:
+                self.catat_durasi_vc(durasi)
+            self.vc_join_times[user_id] = sekarang
+    
     async def _simpan_statistik_async(self):
         try:
             hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
-            await database.save_daily_stats(self.data_stats, hari_ini)
+            if self._tanggal_laporan_tertunda is None and hari_ini != self.tanggal_aktif:
+                await self._proses_pergantian_hari(self.tanggal_aktif)
+                return
+        
+            await database.save_daily_stats(self.data_stats, self.tanggal_aktif)
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ [Aika] Database Daily Stats: gagal menyimpan ({e})", flush=True)
     
@@ -97,9 +125,12 @@ class StatistikHarian(commands.Cog):
             loaded_data, tanggal_db = await database.get_daily_stats()
             hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
             
-            if tanggal_db and tanggal_db != hari_ini:
-                print(f"🔄 [Daily Stats] Tanggal DB ({tanggal_db}) tidak sama dengan hari ini ({hari_ini}). Me-reset statistik...")
-                await self._reset_statistik()
+            if not tanggal_db:
+                print(
+                    "🔄 [Daily Stats] Tanggal DB kosong/tidak ditemukan. Menginisialisasi ulang statistik hari ini...",
+                    flush=True
+                )
+                await self._reset_statistik(hari_ini)
                 return
             
             if "emoji_digunakan" in loaded_data and isinstance(loaded_data["emoji_digunakan"], dict):
@@ -109,25 +140,90 @@ class StatistikHarian(commands.Cog):
                 if key in self.data_stats:
                     self.data_stats[key] = val
             
+            if tanggal_db != hari_ini:
+                print(
+                    f"🔄 [Daily Stats] Tanggal DB ({tanggal_db}) berbeda dengan hari ini ({hari_ini}). "
+                    "Menjadwalkan pengiriman laporan tertunda & reset saat bot siap...",
+                    flush=True
+                )
+                self.tanggal_aktif = tanggal_db
+                self._tanggal_laporan_tertunda = tanggal_db
+            else:
+                self.tanggal_aktif = hari_ini
+        
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ [SQLite] Daily Stats: gagal memuat ({e})", flush=True)
     
-    async def _reset_statistik(self):
+    async def _reset_statistik(self, tanggal_baru:str|None=None):
+        hari_baru = tanggal_baru or datetime.now(WIB).strftime("%Y-%m-%d")
         self.data_stats = self._default_stats()
+        self.tanggal_aktif = hari_baru
+        
         sekarang = datetime.now(UTC)
         for user_id in self.vc_join_times:
             self.vc_join_times[user_id] = sekarang
-    
+        
         try:
-            await database.reset_daily_stats()
+            await database.reset_daily_stats(hari_baru)
+            await database.save_daily_stats(self.data_stats, hari_baru)
         except Exception as e:  # noqa: BLE001
-            print(f"⚠️️ [SQLite] Database Daily Stats: gagal reset ({e})", flush=True)
+            print(f"⚠️ [SQLite] Database Daily Stats: gagal reset ({e})", flush=True)
     
-    def _tambah_stat(self, key: str, value: int = 1):
+    async def _kirim_laporan_harian(self, tanggal_ref:datetime):
+        if not ID_CHANNEL_LOG:
+            print("⚠️ [Daily Stats] ID_CHANNEL_LOG belum diatur di config.", flush=True)
+            return
+        
+        self._flush_durasi_vc_aktif()
+        
+        for guild in self.bot.guilds:
+            channel = guild.get_channel(ID_CHANNEL_LOG)
+            if channel is None:
+                try:
+                    fetched = await self.bot.fetch_channel(ID_CHANNEL_LOG)
+                    if getattr(fetched, "guild", None) == guild:
+                        channel = fetched
+                except discord.HTTPException:
+                    channel = None
+            
+            if isinstance(channel, discord.abc.Messageable):
+                container = self._buat_container_laporan(guild, tanggal_ref)
+                if container.children:
+                    try:
+                        await channel.send(view=discord.ui.LayoutView().add_item(container))
+                    except discord.HTTPException as e:
+                        print(
+                            f"⚠️ [Daily Stats] Gagal mengirim laporan ke #{getattr(channel, \
+                            'name', ID_CHANNEL_LOG)}: {e}", flush=True
+                        )
+    
+    async def _proses_pergantian_hari(self, tanggal_laporan_str:str):
+        """Ngirim laporan kalo hari udah lewat trus nge-reset statistiknya."""
+        hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
+        try:
+            dt_laporan = datetime.strptime(tanggal_laporan_str, "%Y-%m-%d").replace(tzinfo=WIB)
+        except ValueError:
+            dt_laporan = datetime.now(WIB) - timedelta(days=1)
+        
+        try:
+            await self._kirim_laporan_harian(dt_laporan)
+        finally:
+            self._tanggal_laporan_tertunda = None
+            await self._reset_statistik(hari_ini)
+    
+    async def _pastikan_hari_aktif(self):
+        """Memastikan kalo statistik lgsg ke-update kalo udah keesokan harinya"""
+        if self._tanggal_laporan_tertunda is not None:
+            return
+        hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
+        if hari_ini != self.tanggal_aktif:
+            await self._proses_pergantian_hari(self.tanggal_aktif)
+    
+    def _tambah_stat(self, key:str, value:int=1):
         self.data_stats[key] += value
     
     @staticmethod
-    def format_durasi(detik:int) -> str:
+    def format_durasi(detik: int) -> str:
         detik = max(int(detik), 0)
         menit, s = divmod(detik, 60)
         jam, m = divmod(menit, 60)
@@ -164,10 +260,15 @@ class StatistikHarian(commands.Cog):
             poin_f1.append(f"• 📃 {self.data_stats['media_dikirim']} media/attachment dikirim")
         
         if poin_f1:
-            container.add_item(discord.ui.Section(
-                discord.ui.TextDisplay(content=f"### Aktivitas chat:\n{'\n'.join(poin_f1)}"),
-                accessory=discord.ui.Thumbnail(media=icon_url) if icon_url else None
-            ))
+            isi_f1 = "\n".join(poin_f1)
+            teks_f1 = discord.ui.TextDisplay(content=f"### Aktivitas chat:\n{isi_f1}")
+            if icon_url:
+                container.add_item(discord.ui.Section(
+                    teks_f1,
+                    accessory=discord.ui.Thumbnail(media=icon_url)
+                ))
+            else:
+                container.add_item(teks_f1)
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         # bagian 2: reaction & emoji
@@ -181,7 +282,8 @@ class StatistikHarian(commands.Cog):
             poin_f2.append(f"• 🟡 {self.data_stats['reaction_ditambahkan']} reaction ditambahkan")
         
         if poin_f2:
-            container.add_item(discord.ui.TextDisplay(content=f"### Reaction dan emoji:\n{'\n'.join(poin_f2)}"))
+            isi_f2 = "\n".join(poin_f2)
+            container.add_item(discord.ui.TextDisplay(content=f"### Reaction dan emoji:\n{isi_f2}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         # bagian 3: keanggotaan
@@ -194,6 +296,8 @@ class StatistikHarian(commands.Cog):
             poin_f3.append(f"• 🔨 {self.data_stats['member_diban']} member di-ban")
         if self.data_stats["member_timeout"] > 0:
             poin_f3.append(f"• ⏱️ {self.data_stats['member_timeout']} member di-timeout")
+        if self.data_stats["member_ubah_username"] > 0:
+            poin_f3.append(f"• 🪪 {self.data_stats['member_ubah_username']} member mengubah username")
         if self.data_stats["member_ubah_foto_profil"] > 0:
             poin_f3.append(f"• 🎭 {self.data_stats['member_ubah_foto_profil']} member mengubah foto profil")
         if self.data_stats["member_ubah_foto_sampul"] > 0:
@@ -206,23 +310,25 @@ class StatistikHarian(commands.Cog):
             poin_f3.append(f"• 💎 {self.data_stats['member_boost_server']} member mem-boost server")
         
         if poin_f3:
-            container.add_item(discord.ui.TextDisplay(content=f"### Keanggotaan:\n{'\n'.join(poin_f3)}"))
+            isi_f3 = "\n".join(poin_f3)
+            container.add_item(discord.ui.TextDisplay(content=f"### Keanggotaan:\n{isi_f3}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         # bagian 4: aktivitas voice
         poin_f4 = []
         if self.data_stats["vc_bergabung"] > 0:
-            poin_f4.append(f"• 📥 {self.data_stats['vc_bergabung']} member bergabung di VC")
+            poin_f4.append(f"• 📥 {self.data_stats['vc_bergabung']} kali member bergabung di VC")
         if self.data_stats["vc_keluar"] > 0:
-            poin_f4.append(f"• 📤 {self.data_stats['vc_keluar']} member keluar dari VC")
+            poin_f4.append(f"• 📤 {self.data_stats['vc_keluar']} kali member keluar dari VC")
         if self.data_stats["vc_jumlah_sesi"] > 0:
             rata_rata = self.data_stats["vc_durasi_total"] // self.data_stats["vc_jumlah_sesi"]
-            poin_f4.append(f"• 🕒 {self.format_durasi(rata_rata)} rata-rata waktu member dalam VC")
+            poin_f4.append(f"• 🕒 {self.format_durasi(rata_rata)} rata-rata waktu sesi dalam VC")
         if self.data_stats["vc_share_screen"] > 0:
-            poin_f4.append(f"• 🖥️ {self.data_stats['vc_share_screen']} member men-share screen")
+            poin_f4.append(f"• 🖥️ {self.data_stats['vc_share_screen']} kali share screen di VC")
         
         if poin_f4:
-            container.add_item(discord.ui.TextDisplay(content=f"### Aktivitas voice:\n{'\n'.join(poin_f4)}"))
+            isi_f4 = "\n".join(poin_f4)
+            container.add_item(discord.ui.TextDisplay(content=f"### Aktivitas voice:\n{isi_f4}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         # bagian 5: aktivitas server
@@ -265,24 +371,30 @@ class StatistikHarian(commands.Cog):
             poin_f5.append(f"• ❌ {self.data_stats['event_dibatalkan']} event server dibatalkan")
         
         if poin_f5:
-            container.add_item(discord.ui.TextDisplay(content=f"### Pengaturan server:\n{'\n'.join(poin_f5)}"))
+            isi_f5 = "\n".join(poin_f5)
+            container.add_item(discord.ui.TextDisplay(content=f"### Pengaturan server:\n{isi_f5}"))
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         if len(container.children) <= 2:
             container.add_item(discord.ui.TextDisplay(content="Belum ada aktivitas yang tercatat untuk periode ini."))
         
-        container.add_item(discord.ui.TextDisplay(content="-# Data ini dilaporkan kepada para admin server melalui channel logging dan aman bersama kami."))
+        container.add_item(
+            discord.ui.TextDisplay(
+                content="-# Data ini dilaporkan kepada para admin server melalui channel logging dan aman bersama kami."
+            )
+        )
         
         return container
     
     # ==========================================
     # LISTENERS
     # ==========================================
-    
     @commands.Cog.listener()
     async def on_message(self, message:discord.Message):
         if not message.guild or message.author.bot:
             return
+        
+        await self._pastikan_hari_aktif()
         
         self.data_stats["pesan_dikirim"] += 1
         if message.attachments:
@@ -295,17 +407,19 @@ class StatistikHarian(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message_delete(self, message:discord.Message):
-        if message.guild:
+        if message.guild and not message.author.bot:
             self._tambah_stat("pesan_dihapus")
     
     @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages:list[discord.Message]):
         if messages and messages[0].guild:
-            self._tambah_stat("pesan_dihapus", len(messages))
+            pesan_member = [m for m in messages if not m.author.bot]
+            if pesan_member:
+                self._tambah_stat("pesan_dihapus", len(pesan_member))
     
     @commands.Cog.listener()
     async def on_message_edit(self, before:discord.Message, after:discord.Message):
-        if before.guild and before.content != after.content:
+        if before.guild and not before.author.bot and before.content != after.content:
             self._tambah_stat("pesan_diedit")
     
     @commands.Cog.listener()
@@ -317,18 +431,23 @@ class StatistikHarian(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member:discord.Member):
-        self._tambah_stat("member_bergabung")
+        if not member.bot:
+            self._tambah_stat("member_bergabung")
     
     @commands.Cog.listener()
     async def on_member_remove(self, member:discord.Member):
-        self._tambah_stat("member_keluar")
+        if not member.bot:
+            self._tambah_stat("member_keluar")
     
     @commands.Cog.listener()
     async def on_member_ban(self, guild:discord.Guild, user:discord.User|discord.Member):
-        self._tambah_stat("member_diban")
+        if not user.bot:
+            self._tambah_stat("member_diban")
     
     @commands.Cog.listener()
     async def on_user_update(self, before:discord.User, after:discord.User):
+        if before.bot:
+            return
         if before.name != after.name:
             self._tambah_stat("member_ubah_username")
         if before.avatar != after.avatar:
@@ -336,6 +455,8 @@ class StatistikHarian(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_update(self, before:discord.Member, after:discord.Member):
+        if before.bot:
+            return
         if before.guild_avatar != after.guild_avatar:
             self.data_stats["member_ubah_foto_profil"] += 1
         if before.guild_banner != after.guild_banner:
@@ -344,23 +465,30 @@ class StatistikHarian(commands.Cog):
             self.data_stats["member_ubah_nickname"] += 1
         if before.roles != after.roles:
             self.data_stats["member_berganti_role"] += 1
-        if before.timed_out_until != after.timed_out_until and after.timed_out_until is not None:
+        if (
+            before.timed_out_until != after.timed_out_until
+            and after.timed_out_until is not None
+            and after.timed_out_until > datetime.now(UTC)
+        ):
             self.data_stats["member_timeout"] += 1
         if before.premium_since is None and after.premium_since is not None:
             self.data_stats["member_boost_server"] += 1
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member, before:discord.VoiceState, after:discord.VoiceState):
+        if member.bot:
+            return
+        
         sekarang = datetime.now(UTC)
         
         if before.channel != after.channel:
             # member masuk vc
-            if before.channel is None and after.channel:
+            if before.channel is None and after.channel is not None:
                 self.data_stats["vc_bergabung"] += 1
                 self.vc_join_times[member.id] = sekarang
-                
+            
             # member keluar vc
-            elif after.channel is None and before.channel:
+            elif after.channel is None and before.channel is not None:
                 self.data_stats["vc_keluar"] += 1
                 waktu_join = self.vc_join_times.pop(member.id, None)
                 if waktu_join:
@@ -393,7 +521,7 @@ class StatistikHarian(commands.Cog):
             self._tambah_stat("role_pengaturan_diubah")
     
     @commands.Cog.listener()
-    async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
+    async def on_guild_update(self, before:discord.Guild, after:discord.Guild):
         if before.name != after.name:
             self.data_stats["server_nama_diubah"] += 1
         if before.icon != after.icon:
@@ -439,49 +567,47 @@ class StatistikHarian(commands.Cog):
     async def on_scheduled_event_delete(self, event:discord.ScheduledEvent):
         self._tambah_stat("event_dibatalkan")
     
-    def catat_durasi_vc(self, detik: int):
+    def catat_durasi_vc(self, detik:int):
         self.data_stats["vc_durasi_total"] += detik
         self.data_stats["vc_jumlah_sesi"] += 1
     
     # ==========================================
     # COMMAND DAN BAGIAN2 OTOMATIS
     # ==========================================
-    
     @commands.command(
         name="binroom-stats",
         description="Menampilkan statistik server dalam sehari.",
         aliases=["stat", "statistik"]
     )
-    async def cmd_tampil_stats(self, ctx: commands.Context):
+    async def cmd_tampil_stats(self, ctx:commands.Context):
+        await self._pastikan_hari_aktif()
         sekarang = datetime.now(WIB)
         container = self._buat_container_laporan(ctx.guild, sekarang)
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
     
     @tasks.loop(minutes=5)
     async def tugas_simpan_periodik(self):
-        """Menyimpan data statistik ke SQLite setiap 5 menit agar aman dari DB Lock."""
+        """Nyimpan data statistik ke SQLite tiap 5 menit supaya gak kena DB Lock."""
+        if self._tanggal_laporan_tertunda is not None:
+            return
         await self._simpan_statistik_async()
+    
+    @tugas_simpan_periodik.before_loop
+    async def sebelum_tugas_simpan_periodik(self):
+        await self.bot.wait_until_ready()
     
     @tasks.loop(time=time(hour=0, minute=0, second=0, tzinfo=WIB))
     async def tugas_laporan_harian(self):
-        kemarin = datetime.now(WIB) - timedelta(days=1)
-        
-        try:
-            for guild in self.bot.guilds:
-                channel = guild.get_channel(ID_CHANNEL_LOG)
-                if isinstance(channel, discord.TextChannel):
-                    container = self._buat_container_laporan(guild, kemarin)
-                    if container.children:
-                        try:
-                            await channel.send(view=discord.ui.LayoutView().add_item(container))
-                        except discord.HTTPException:
-                            pass
-        finally:
-            await self._reset_statistik()
+        kemarin_str = (datetime.now(WIB) - timedelta(days=1)).strftime("%Y-%m-%d")
+        await self._proses_pergantian_hari(kemarin_str)
     
     @tugas_laporan_harian.before_loop
     async def sebelum_tugas_laporan_harian(self):
         await self.bot.wait_until_ready()
+        self._sinkronkan_member_vc_aktif()
+        
+        if self._tanggal_laporan_tertunda is not None:
+            await self._proses_pergantian_hari(self._tanggal_laporan_tertunda)
 
 
 async def setup(bot:commands.Bot):

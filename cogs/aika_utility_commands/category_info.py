@@ -23,7 +23,7 @@ class CategoryInfo(commands.Cog):
         cat = target_category or (ctx.channel.category if hasattr(ctx.channel, 'category') else None)
         
         if cat is None:
-            await ctx.send("❌ Channel ini tidak berada di dalam kategori mana pun! Silakan tentukan kategori target.", ephemeral=True)
+            await ctx.reply("❌ Channel ini tidak berada di dalam kategori mana pun! Silakan tentukan kategori target.", ephemeral=True)
             return
         
         thumb_url = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/1f4c1.png"  # 📁
@@ -57,7 +57,7 @@ class CategoryInfo(commands.Cog):
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.TextDisplay(content=f"- **Pengecualian izin kustom:** {len(cat.overwrites)}"))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )

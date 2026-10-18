@@ -27,13 +27,12 @@ async def fetch_image_as_base64(url: str) -> str:
     if not url:
         return ""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=5) as resp:
-                if resp.status == 200:
-                    content_type = resp.headers.get("Content-Type", "image/png")
-                    data = await resp.read()
-                    encoded = base64.b64encode(data).decode("utf-8")
-                    return f"data:{content_type};base64,{encoded}"
+        async with aiohttp.ClientSession() as session, session.get(url, timeout=5) as resp:
+            if resp.status == 200:
+                content_type = resp.headers.get("Content-Type", "image/png")
+                data = await resp.read()
+                encoded = base64.b64encode(data).decode("utf-8")
+                return f"data:{content_type};base64,{encoded}"
     except Exception as e:  # noqa: BLE001
         print(f"[Card API] Failed to fetch image: {e}")
     return ""

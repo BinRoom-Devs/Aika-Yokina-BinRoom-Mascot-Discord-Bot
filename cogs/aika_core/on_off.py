@@ -64,7 +64,7 @@ class TombolPower(commands.Cog):
             color = 0xFFCC4D
         )
         view = TombolKonfirmasi(ctx.author.id, "shutdown")
-        msg = await ctx.send(embed=embed_konfirm, view=view)
+        msg = await ctx.reply(embed=embed_konfirm, view=view)
         
         await view.wait()
         
@@ -115,7 +115,7 @@ class TombolPower(commands.Cog):
             color = 0xFFCC4D
         )
         view = TombolKonfirmasi(ctx.author.id, "restart")
-        msg = await ctx.send(embed=embed_konfirm, view=view)
+        msg = await ctx.reply(embed=embed_konfirm, view=view)
         
         await view.wait()
         
@@ -186,7 +186,7 @@ class TombolPower(commands.Cog):
     async def command_cog_error(self, ctx:commands.Context, error:Exception):
         if isinstance(error, commands.NotOwner):
             try:
-                await ctx.send("❌ Fitur ini khusus untuk developer Aika!")
+                await ctx.reply("❌ Fitur ini khusus untuk developer Aika!")
             except discord.HTTPException:
                 pass
         else:

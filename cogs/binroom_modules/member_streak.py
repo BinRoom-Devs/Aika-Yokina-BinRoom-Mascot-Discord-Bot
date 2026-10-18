@@ -31,7 +31,7 @@ class MemberStreak(commands.Cog):
         self.bot = bot
     
     @commands.Cog.listener()
-    async def on_message(self, message:discord.Message):
+    async def on_message(self, message: discord.Message):
         if message.author.bot or not message.guild:
             return
         
@@ -47,7 +47,10 @@ class MemberStreak(commands.Cog):
             container.add_item(discord.ui.TextDisplay(
                 content=f"### 🔥 Streak nimbrung +1! Sekarang: __{hasil['streak_skrg']} hari__"
             ))
-            await message.channel.reply(view=LayoutView().add_item(container), delete_after=10)
+            try:
+                await message.reply(view=LayoutView().add_item(container), delete_after=10)
+            except discord.HTTPException:
+                pass
             
         elif status == "streak_reset":
             container.add_item(discord.ui.TextDisplay(
@@ -57,7 +60,10 @@ class MemberStreak(commands.Cog):
             container.add_item(discord.ui.TextDisplay(
                 content=f"### 🔥 Streak nimbrung +1! Sekarang: __{hasil['streak_skrg']} hari__"
             ))
-            await message.channel.reply(view=LayoutView().add_item(container), delete_after=10)
+            try:
+                await message.reply(view=LayoutView().add_item(container), delete_after=10)
+            except discord.HTTPException:
+                pass
         
     @commands.hybrid_group(
         name="streak",
@@ -76,7 +82,7 @@ class MemberStreak(commands.Cog):
         target = target or ctx.author
         
         if target.bot:
-            await ctx.send("💢 Streak nimbrung tidak berlaku untuk bot.", ephemeral=True)
+            await ctx.reply("💢 Streak nimbrung tidak berlaku untuk bot.", ephemeral=True)
             return
         
         await ctx.defer()
@@ -115,7 +121,7 @@ class MemberStreak(commands.Cog):
         footer = "-# Nimbrung tiap hari minimal 1 pesan biar streak-mu tetap jalan!"
         container.add_item(TextDisplay(content=footer))
         
-        await ctx.send(
+        await ctx.reply(
             view=LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
@@ -141,7 +147,7 @@ class MemberStreak(commands.Cog):
             container.add_item(Separator(spacing=SeparatorSpacing.small, visible=False))
             container.add_item(TextDisplay(content="Kamu belum memiliki catatan streak di BinRoom."))
             
-        await ctx.send(
+        await ctx.reply(
             view=LayoutView().add_item(container),
             ephemeral=True
         )
@@ -176,7 +182,7 @@ class MemberStreak(commands.Cog):
         container.add_item(Separator(spacing=SeparatorSpacing.small))
         container.add_item(TextDisplay(content="-# Tetap aktif nimbrung tiap hari buat mempertahankan posisi top-mu!"))
         
-        await ctx.send(
+        await ctx.reply(
             view=LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )

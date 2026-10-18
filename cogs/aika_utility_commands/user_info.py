@@ -10,7 +10,7 @@ import config
 
 
 class UserInfo(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._session: aiohttp.ClientSession | None = None
     
@@ -159,9 +159,9 @@ class UserInfo(commands.Cog):
     @commands.hybrid_command(
         name="userinfo",
         description="Nampilin informasi lengkap tentang akun seseorang.",
-        aliases=["uinfo", "whois"]
+        aliases=["uinfo", "user", "pengguna", "whois"]
     )
-    @app_commands.describe(target_user="User yang ingin diperiksa (Default: diri sendiri)")
+    @app_commands.describe(target_user="Pengguna yang ingin diperiksa (Default: diri sendiri)")
     async def user_info(
         self,
         ctx: commands.Context,
@@ -201,13 +201,17 @@ class UserInfo(commands.Cog):
             elif target.mobile_status != discord.Status.offline and target.desktop_status == discord.Status.offline:
                 status_emoji = app_emojis["mobile"]
                 status_str = "__online di perangkat mobile__"
+            elif target.status == discord.Status.dnd:
+                status_str = "dalam __mode jangan ganggu (DND)__"
+            elif target.status == discord.Status.idle:
+                status_str = "__idling__"
         
         accent = target.accent_color.value if getattr(target, 'accent_color', None) else config.pengaturan.warna_aika
         if is_member and target.top_role and target.top_role.color.value != 0:
             accent = target.top_role.color.value
         
         container = discord.ui.Container(accent_color=accent)
-        header_1 = f"### {'👤' if not target.bot else '🤖'}  Informasi {'User' if not target.bot else 'Bot'} — {target.mention}"
+        header_1 = f"### {'👤' if not target.bot else '🤖'}  Informasi {'Pengguna' if not target.bot else 'Bot'} — {target.mention}"
         container.add_item(discord.ui.TextDisplay(content=header_1))
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
@@ -232,16 +236,19 @@ class UserInfo(commands.Cog):
         ]
         
         badge_list = []
-        if target.public_flags.hypesquad_bravery: badge_list.append(app_emojis['hypesquad_bravery'])
-        if target.public_flags.hypesquad_brilliance: badge_list.append(app_emojis['hypesquad_brilliance'])
-        if target.public_flags.hypesquad_balance: badge_list.append(app_emojis['hypesquad_balance'])
+        if target.public_flags.hypesquad_bravery:
+            badge_list.append(f"{app_emojis['hypesquad_bravery']} HypeSquad Bravery")
+        if target.public_flags.hypesquad_brilliance:
+            badge_list.append(f"{app_emojis['hypesquad_brilliance']} HypeSquad Brilliance")
+        if target.public_flags.hypesquad_balance:
+            badge_list.append(f"{app_emojis['hypesquad_balance']} HypeSquad Balance")
         
         for flag, value in target.public_flags:
             if value and not flag.startswith("hypesquad"):
                 badge_list.append(f"🏅 {flag.replace('_', ' ').title()}")
         
         if badge_list:
-            bagian_1.append(f"- **Lencana publik:** {'  '.join(badge_list)}")
+            bagian_1.append(f"- **Lencana publik:** {', '.join(badge_list)}")
         
         container_sementara.add_item(discord.ui.Section(
             discord.ui.TextDisplay(content='\n'.join(bagian_1)),
@@ -262,31 +269,91 @@ class UserInfo(commands.Cog):
                     pass
             
             bagian_guild = [
-                f"- **Nickname server:** {target.nick or 'Tidak ada'}",
-                f"- **Bergabung ke server:** {joined_at}",
+                f"- **Nickname Server:** {target.nick or 'Tidak ada'}",
+                f"- **Bergabung ke Server:** {joined_at}",
                 f"- **Member keberapa bergabung:** {join_position}",
-                f"- **Role tertinggi:** {target.top_role.mention if target.top_role else 'tidak ada'}",
+                f"- **Role Tertinggi:** {target.top_role.mention if target.top_role else 'Tidak ada'}",
             ]
+            
             if target.premium_since:
-                bagian_guild.append(f"- **Mulai boost server:** <t:{int(target.premium_since.timestamp())}:R>")
+                boosted_at = f"<t:{int(target.premium_since.timestamp())}:R>"
+                bagian_guild.append(f"- **Mulai Boost Server:** {boosted_at}")
+            
+            if target.voice:
+                vc = target.voice.channel
+                vc_info = f"{vc.mention}"
+                if target.voice.self_mute or target.voice.mute: vc_info += " (Muted)"
+                if target.voice.self_deaf or target.voice.deaf: vc_info += " (Deafened)"
+                if target.voice.self_stream: vc_info += " (Live/Screen Share)"
+                bagian_guild.append(f"- **Sedang VC di:** {vc_info}")
             
             container_sementara.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_guild)))
             container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
+            act_list = []
+            for act in target.activities:
+                if isinstance(act, discord.CustomActivity):
+                    emoji = f"{act.emoji} " if act.emoji else ""
+                    if not act.name or act.name == "Custom Status":
+                        status_kustom = f"**Status Kustom:**\n## {emoji}\n"
+                    else:
+                        status_kustom = f"**Status Kustom:**\n> {emoji} {act.name}"
+                    act_list.append(status_kustom)
+                    
+                elif act.type == discord.ActivityType.playing or isinstance(act, discord.Game):
+                    details = f" *({act.details})*" if getattr(act, 'details', None) else ""
+                    act_list.append(f"- **Bermain/membuka:** **{act.name}**{details}")
+                    
+                elif isinstance(act, discord.Streaming):
+                    act_list.append(f"- **Streaming:** [{act.name}]({act.url})")
+                    
+                elif isinstance(act, discord.Spotify):
+                    act_list.append(f"- **Mendengarkan Spotify:** {act.title} — *{act.artist}*")
+                    
+                elif act.type == discord.ActivityType.listening:
+                    act_list.append(f"- **Mendengarkan:** {act.name}")
+                    
+                elif act.type == discord.ActivityType.watching:
+                    act_list.append(f"- **Menonton:** {act.name}")
+            
+            if not act_list:
+                act_list.append("- **Aktivitas:** Tidak ada aktivitas aktif.")
+            
+            container_sementara.add_item(discord.ui.TextDisplay(content='\n'.join(act_list)))
+            container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            
             roles = [r.mention for r in reversed(target.roles) if not r.is_default()]
-            if roles:
-                role_text = f"- **Role ({len(roles)}):** {', '.join(roles[:8])}"
-                if len(roles) > 8: role_text += f" *(dan {len(roles) - 8} role lainnya)*"
+            total_roles = len(roles)
+            if total_roles > 0:
+                role_text = f"- **Role ({total_roles}):** {', '.join(roles[:8])}"
+                if total_roles > 8:
+                    role_text += f" *(dan {total_roles - 8} role lainnya)*"
             else:
-                role_text = "- **Role:** tidak memiliki role khusus."
+                role_text = "- **Role:** Tidak memiliki role khusus."
             container_sementara.add_item(discord.ui.TextDisplay(content=role_text))
+            container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+            
+            perms = target.guild_permissions
+            if perms.administrator:
+                perm_text = "- **Izin Kunci:** ⚠️ administrator (akses penuh server)"
+            else:
+                key_perms = []
+                if perms.manage_guild: key_perms.append("Kelola Server")
+                if perms.manage_roles: key_perms.append("Kelola Role")
+                if perms.manage_channels: key_perms.append("Kelola Saluran")
+                if perms.kick_members or perms.ban_members: key_perms.append("Kick/Ban")
+                if perms.moderate_members: key_perms.append("Timeout")
+                if perms.manage_messages: key_perms.append("Kelola Pesan")
+                
+                perm_text = f"- **Izin Kunci:** {', '.join(key_perms)}" if key_perms else "- **Izin Kunci:** Anggota Biasa"
+            container_sementara.add_item(discord.ui.TextDisplay(content=perm_text))
             container_sementara.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         
         footer = f"-# {status_emoji}  {target.name} saat ini sedang {status_str}."
         container_sementara.add_item(discord.ui.TextDisplay(content=f"{footer}  •  Memuat ikon avatar beserta animasi frame..."))
         
         view_sementara = discord.ui.LayoutView().add_item(container_sementara)
-        pesan_terkirim = await ctx.send(view=view_sementara, allowed_mentions=discord.AllowedMentions.none())
+        pesan_terkirim = await ctx.reply(view=view_sementara, allowed_mentions=discord.AllowedMentions.none())
         
         avatar_bytes, frame_bytes = await asyncio.gather(
             self._unduh_bytes(avatar_url),
@@ -312,7 +379,11 @@ class UserInfo(commands.Cog):
             if is_member:
                 container_final.add_item(discord.ui.TextDisplay(content='\n'.join(bagian_guild)))
                 container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+                container_final.add_item(discord.ui.TextDisplay(content='\n'.join(act_list)))
+                container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container_final.add_item(discord.ui.TextDisplay(content=role_text))
+                container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+                container_final.add_item(discord.ui.TextDisplay(content=perm_text))
                 container_final.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             
             container_final.add_item(discord.ui.TextDisplay(content=footer))
@@ -329,5 +400,5 @@ class UserInfo(commands.Cog):
                 pass
 
 
-async def setup(bot:commands.Bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(UserInfo(bot))

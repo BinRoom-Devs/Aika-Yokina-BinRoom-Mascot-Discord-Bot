@@ -164,7 +164,7 @@ class ServerInfo(commands.Cog):
         footer = f"-# {presence_summary}"
         container.add_item(discord.ui.TextDisplay(content=footer))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none(),
         )

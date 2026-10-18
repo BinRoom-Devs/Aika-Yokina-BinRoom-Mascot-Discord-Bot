@@ -12,3 +12,4 @@ qrcode
 pydantic
 pydantic-settings
 pylatexenc
+opencv

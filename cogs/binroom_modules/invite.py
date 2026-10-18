@@ -7,7 +7,7 @@ class Invite(commands.Cog):
     
     @commands.hybrid_command(name="link-invite-binroom", description="Kirimin link invite server BinRoom")
     async def invite(self, ctx:commands.Context):
-        await ctx.send("https://discord.gg/cDMxkAkMYm")
+        await ctx.reply("https://discord.gg/cDMxkAkMYm")
 
 
 async def setup(bot):

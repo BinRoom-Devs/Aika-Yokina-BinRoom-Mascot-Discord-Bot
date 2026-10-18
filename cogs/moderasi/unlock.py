@@ -14,7 +14,7 @@ class Unlock(commands.Cog):
     async def unlock(self, ctx:commands.Context):
         overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
         if overwrite.send_messages is True or overwrite.send_messages is None:
-            await ctx.send("Channel ini tidak dalam kondisi terkunci.", ephemeral=True)
+            await ctx.reply("Channel ini tidak dalam kondisi terkunci.", ephemeral=True)
             return
         
         overwrite.send_messages = None
@@ -25,14 +25,14 @@ class Unlock(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content="Akses kirim pesan untuk `@everyone` telah dipulihkan."))
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
     
     @unlock.error
     async def unlock_error(self, ctx:commands.Context, error:commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Manage Channels` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Manage Channels` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Manage Channels` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Manage Channels` untuk melakukan aksi ini.", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):

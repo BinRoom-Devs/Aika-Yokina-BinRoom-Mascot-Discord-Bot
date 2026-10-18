@@ -67,7 +67,7 @@ class Ping(commands.Cog):
             latensi_db = "Offline"
         
         waktu_mulai_api = time.perf_counter()
-        pesan = await ctx.send("Pong! 🏓\nSedang menghitung latensi...")
+        pesan = await ctx.reply("Pong! 🏓\nSedang menghitung latensi...")
         latensi_api = round((time.perf_counter() - waktu_mulai_api) * 1000)
         
         waktu_pesan = pesan.created_at

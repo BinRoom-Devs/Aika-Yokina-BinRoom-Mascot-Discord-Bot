@@ -478,13 +478,13 @@ class Snipe(commands.Cog):
             sniped_list = self._get_valid_snipes(ctx.channel.id)
             
             if not sniped_list:
-                await ctx.send("Gak ada pesan yang baru dihapus di channel ini.")
+                await ctx.reply("Gak ada pesan yang baru dihapus di channel ini.")
                 return
             
             view = SnipeView(ctx, sniped_list, self.session)
             files = await view.setup_layout()
             
-            msg = await ctx.send(files=files, view=view, allowed_mentions=discord.AllowedMentions.none())
+            msg = await ctx.reply(files=files, view=view, allowed_mentions=discord.AllowedMentions.none())
             view.message = msg
 
 

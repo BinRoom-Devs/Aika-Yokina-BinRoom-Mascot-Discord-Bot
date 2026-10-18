@@ -114,7 +114,7 @@ class RoleInfo(commands.Cog):
                 text_perm = "- **Izin utama:** anggota biasa (tidak ada izin administratif khusus)"
         container.add_item(discord.ui.TextDisplay(content=text_perm))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
@@ -122,11 +122,11 @@ class RoleInfo(commands.Cog):
     @role_info.error
     async def role_info_error(self, ctx:commands.Context, error:commands.CommandError):
         if isinstance(error, commands.MissingRequiredArgument) and error.param.name == "target_role":
-            await ctx.send("Masukin role yang pengen kamu liat infonya.\nContoh: `!roleinfo @Admin` atau `!roleinfo 123456789012345678`", ephemeral=True)
+            await ctx.reply("Masukin role yang pengen kamu liat infonya.\nContoh: `!roleinfo @Admin` atau `!roleinfo 123456789012345678`", ephemeral=True)
             return
         
         if isinstance(error, commands.RoleNotFound):
-            await ctx.send("❌ Role yang kamu masukin gak ditemukan.", ephemeral=True)
+            await ctx.reply("❌ Role yang kamu masukin gak ditemukan.", ephemeral=True)
             return
         
         else:

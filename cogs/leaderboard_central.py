@@ -46,7 +46,7 @@ class LeaderboardCentral(commands.Cog):
             container.add_item(Separator(spacing=SeparatorSpacing.small))
             container.add_item(TextDisplay(content="-# Pilih salah satu command di atas untuk melihat detailnya!"))
             
-            await ctx.send(
+            await ctx.reply(
                 view=LayoutView().add_item(container),
                 allowed_mentions=discord.AllowedMentions.none()
             )
@@ -81,7 +81,7 @@ class LeaderboardCentral(commands.Cog):
         container.add_item(Separator(spacing=SeparatorSpacing.small))
         container.add_item(TextDisplay(content="-# Tetap aktif nimbrung tiap hari buat mempertahankan posisi top-mu!"))
         
-        await ctx.send(
+        await ctx.reply(
             view=LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
@@ -96,7 +96,7 @@ class LeaderboardCentral(commands.Cog):
         
         gd_cog = self.bot.get_cog("BinrumLeaderboard")
         if not gd_cog:
-            await ctx.send("<:GD_x:1543409414843662346> Fitur GD Leaderboard sedang tidak aktif/tersedia.")
+            await ctx.reply("<:GD_x:1543409414843662346> Fitur GD Leaderboard sedang tidak aktif/tersedia.")
             return
         
         normalized = normalisasi_kategori_gd(category)
@@ -106,7 +106,7 @@ class LeaderboardCentral(commands.Cog):
         daftar_player = await load_daftar_player_async()
         view = GDLeaderboardCategoryView(gd_cog, daftar_player, normalized, timeout_seconds=180.0)
         embed = view.build_embed()
-        pesan = await ctx.send(embed=embed, view=view)
+        pesan = await ctx.reply(embed=embed, view=view)
         view.message = pesan
 
 

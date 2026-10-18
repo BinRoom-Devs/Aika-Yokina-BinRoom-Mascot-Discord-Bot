@@ -61,7 +61,7 @@ class BinrumLeaderboard(commands.Cog):
             except discord.HTTPException:
                 pass
         else:
-            await ctx.send(msg)
+            await ctx.reply(msg)
     
     async def refresh_data_only(self) -> tuple[int, int]:
         daftar_id_player = await load_daftar_player_async()
@@ -259,7 +259,7 @@ class BinrumLeaderboard(commands.Cog):
         
         gd_cog = self.bot.get_cog("BinrumLeaderboard")
         if not gd_cog:
-            await ctx.send("<:GD_x:1543409414843662346> Fitur GD Leaderboard sedang tidak aktif/tersedia.")
+            await ctx.reply("<:GD_x:1543409414843662346> Fitur GD Leaderboard sedang tidak aktif/tersedia.")
             return
         
         normalized = normalisasi_kategori_gd(category)
@@ -269,7 +269,7 @@ class BinrumLeaderboard(commands.Cog):
         daftar_player = await load_daftar_player_async()
         view = GDLeaderboardCategoryView(gd_cog, daftar_player, normalized, timeout_seconds=180.0)
         embed = view.build_embed()
-        pesan = await ctx.send(embed=embed, view=view)
+        pesan = await ctx.reply(embed=embed, view=view)
         view.message = pesan
     
     @gd_leaderboard.command(
@@ -284,9 +284,9 @@ class BinrumLeaderboard(commands.Cog):
         await ctx.defer(ephemeral=False)
         try:
             await self.update_tampilan_leaderboard(target_channel=ctx.channel)
-            await ctx.send("<:GD_complete:1543409457940267078> Leaderboard berhasil diperbarui.")
+            await ctx.reply("<:GD_complete:1543409457940267078> Leaderboard berhasil diperbarui.")
         except Exception as e:  # noqa: BLE001
-            await ctx.send(f"Gagal, coba lagi.\n`{e}`")
+            await ctx.reply(f"Gagal, coba lagi.\n`{e}`")
     
     @gd_leaderboard.command(
         name="rebuild",
@@ -300,9 +300,9 @@ class BinrumLeaderboard(commands.Cog):
         await ctx.defer(ephemeral=False)
         try:
             await self.render_tampilan_leaderboard_lokal(target_channel=ctx.channel)
-            await ctx.send("<:GD_complete:1543409457940267078> Berhasil merender ulang leaderboard")
+            await ctx.reply("<:GD_complete:1543409457940267078> Berhasil merender ulang leaderboard")
         except Exception as e:  # noqa: BLE001
-            await ctx.send(f"Gagal merender ulang leaderboard.\n`{e}`")
+            await ctx.reply(f"Gagal merender ulang leaderboard.\n`{e}`")
     
     @gd_leaderboard.command(
         name="daftarkan",
@@ -318,7 +318,7 @@ class BinrumLeaderboard(commands.Cog):
         
         data_user = await cari_profil_gd(self.session, nama_input)
         if not data_user:
-            await ctx.send("<:GD_x:1543409414843662346> Username GD tidak valid, gagal mendaftarkan...", ephemeral=True)
+            await ctx.reply("<:GD_x:1543409414843662346> Username GD tidak valid, gagal mendaftarkan...", ephemeral=True)
             return
         
         account_id, player_id, nama_asli = data_user
@@ -365,7 +365,7 @@ class BinrumLeaderboard(commands.Cog):
         if id_discord:
             embed_sukses.description += f"\nDiisikan ke akun Discord: <@{id_discord}>"
         
-        await ctx.send(embed=embed_sukses)
+        await ctx.reply(embed=embed_sukses)
     
     @gd_leaderboard.command(
         name="hapus-player",
@@ -380,9 +380,9 @@ class BinrumLeaderboard(commands.Cog):
         daftar_player = await load_daftar_player_async()
         
         if not daftar_player:
-            await ctx.send("<:GD_x:1543409414843662346> Belum ada player terdaftar di leaderboard.", ephemeral=True)
+            await ctx.reply("<:GD_x:1543409414843662346> Belum ada player terdaftar di leaderboard.", ephemeral=True)
             return
         
         menu_view = MenuPilihHapusPlayer(daftar_player, timeout_seconds=60.0)
-        pesan = await ctx.send(embed=menu_view.get_content(), view=menu_view, ephemeral=True)
+        pesan = await ctx.reply(embed=menu_view.get_content(), view=menu_view, ephemeral=True)
         menu_view.pesan = pesan

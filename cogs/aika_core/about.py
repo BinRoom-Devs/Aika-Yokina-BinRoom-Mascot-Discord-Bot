@@ -65,7 +65,7 @@ class About(commands.Cog):
             
         embed.set_footer(text="Untuk info statisik bot, cek ak!info")
         
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
         print("[Aika] Command about dieksekusi")
 
 

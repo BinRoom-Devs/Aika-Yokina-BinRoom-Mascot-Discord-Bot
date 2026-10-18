@@ -129,7 +129,7 @@ class Sticker(commands.Cog):
                 container.add_item(discord.ui.TextDisplay(content="### ❌ Stiker Tidak Ditemukan"))
                 container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container.add_item(discord.ui.TextDisplay(content="Gak ada stiker baru-baru ini di chat. Coba masukin ID stiker secara manual."))
-                await ctx.send(view=discord.ui.LayoutView().add_item(container))
+                await ctx.reply(view=discord.ui.LayoutView().add_item(container))
                 return
         else:
             if not sticker_id.isdigit():
@@ -137,7 +137,7 @@ class Sticker(commands.Cog):
                 container.add_item(discord.ui.TextDisplay(content="### ❌ ID Tidak Valid"))
                 container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container.add_item(discord.ui.TextDisplay(content="ID Stiker harus berupa deretan angka."))
-                await ctx.send(view=discord.ui.LayoutView().add_item(container))
+                await ctx.reply(view=discord.ui.LayoutView().add_item(container))
                 return
                 
             target_id = int(sticker_id)
@@ -156,7 +156,7 @@ class Sticker(commands.Cog):
                 container.add_item(discord.ui.TextDisplay(content="### ❌ Format Stiker Tidak Didukung"))
                 container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container.add_item(discord.ui.TextDisplay(content="Aika belum bisa memproses stiker resmi bertipe Lottie/Animasi bawaan Discord."))
-                await ctx.send(view=discord.ui.LayoutView().add_item(container))
+                await ctx.reply(view=discord.ui.LayoutView().add_item(container))
                 return
             
             hasil, link_sticker = respons_proses
@@ -183,7 +183,7 @@ class Sticker(commands.Cog):
             footer = f"-# [Link]({link_sticker})  ·  {str_format}{ukuran_str}{frames_str}{id_str}"
             container.add_item(discord.ui.TextDisplay(content=footer))
             
-            await ctx.send(file=file_discord, view=discord.ui.LayoutView().add_item(container))
+            await ctx.reply(file=file_discord, view=discord.ui.LayoutView().add_item(container))
 
 
 async def setup(bot: commands.Bot):

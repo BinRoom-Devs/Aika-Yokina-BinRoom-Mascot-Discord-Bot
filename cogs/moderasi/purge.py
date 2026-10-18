@@ -17,7 +17,7 @@ class Purge(commands.Cog):
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx: commands.Context, amount: int):
         if amount < 1:
-            await ctx.send("Jumlah pesan harus lebih dari 0.", ephemeral=True)
+            await ctx.reply("Jumlah pesan harus lebih dari 0.", ephemeral=True)
             return
         
         limit = amount + 1 if not ctx.interaction else amount
@@ -31,7 +31,7 @@ class Purge(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content=f"Jumlah pesan terhapus: **{count}**"))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none(),
             delete_after=5,
@@ -41,15 +41,15 @@ class Purge(commands.Cog):
     @purge.error
     async def purge_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Manage Messages` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Manage Messages` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Manage Messages` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Manage Messages` untuk melakukan aksi ini.", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Infokan berapa jumlah pesan yang mau dihapus.", ephemeral=True)
+            await ctx.reply("Infokan berapa jumlah pesan yang mau dihapus.", ephemeral=True)
         elif isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
-            await ctx.send("Pakai `/purgeuser` kalau ingin menghapus pesan dari member tertentu.", ephemeral=True)
+            await ctx.reply("Pakai `/purgeuser` kalau ingin menghapus pesan dari member tertentu.", ephemeral=True)
         elif isinstance(error, commands.BadArgument):
-            await ctx.send("Jumlah pesan harus berupa angka bulat.", ephemeral=True)
+            await ctx.reply("Jumlah pesan harus berupa angka bulat.", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

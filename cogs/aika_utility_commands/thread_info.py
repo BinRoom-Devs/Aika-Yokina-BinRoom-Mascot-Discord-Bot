@@ -24,7 +24,7 @@ class ThreadCategoryInfo(commands.Cog):
             if isinstance(ctx.channel, discord.Thread):
                 th = ctx.channel
             else:
-                await ctx.send("❌ Channel ini bukan sebuah thread! Silakan tentukan thread target.", ephemeral=True)
+                await ctx.reply("❌ Channel ini bukan sebuah thread! Silakan tentukan thread target.", ephemeral=True)
                 return
         else:
             th = target_thread
@@ -57,7 +57,7 @@ class ThreadCategoryInfo(commands.Cog):
             accessory=discord.ui.Thumbnail(media=thumb_url)
         ))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )

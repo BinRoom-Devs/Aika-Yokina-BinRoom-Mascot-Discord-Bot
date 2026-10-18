@@ -32,12 +32,12 @@ class TempBan(commands.Cog):
         reason: str | None = "*Tanpa alasan.*"
     ):
         if member.top_role >= ctx.author.top_role and ctx.author != ctx.guild.owner:
-            await ctx.send("💢 Posisi role member-nya setara atau lebih tinggi dari punyamu!", ephemeral=True)
+            await ctx.reply("💢 Posisi role member-nya setara atau lebih tinggi dari punyamu!", ephemeral=True)
             return
         
         td = baca_durasi(duration)
         if not td:
-            await ctx.send("Format durasi tidak valid. Gunakan format seperti `10s`, `15m`, `2h`, atau `7d`.", ephemeral=True)
+            await ctx.reply("Format durasi tidak valid. Gunakan format seperti `10s`, `15m`, `2h`, atau `7d`.", ephemeral=True)
             return
         
         user_id = member.id
@@ -50,7 +50,7 @@ class TempBan(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content=f"Durasi: {duration}\nAlasan: {reason}"))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
@@ -65,11 +65,11 @@ class TempBan(commands.Cog):
     @tempban.error
     async def tempban_error(self, ctx:commands.Context, error:commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Ban Members` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Ban Members` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Ban Members` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Ban Members` untuk melakukan aksi ini.", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Gunakan format: `/tempban [member] [durasi] [alasan]`", ephemeral=True)
+            await ctx.reply("Gunakan format: `/tempban [member] [durasi] [alasan]`", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):

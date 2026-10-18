@@ -201,7 +201,7 @@ class Sistem(commands.Cog):
 
         is_admin = getattr(ctx.author.guild_permissions, "administrator", False) if ctx.guild else False
         
-        await ctx.send(
+        await ctx.reply(
             content="...ngapain liat2 internalku? Gak penting amat 🧐" if not is_admin else None,
             embed=embed,
         )

@@ -68,11 +68,11 @@ class BinroomID(commands.Cog):
         target = member or ctx.author
         
         if not isinstance(target, discord.Member):
-            await ctx.send("❌ Orangnya gaada di BinRoom!", ephemeral=True)
+            await ctx.reply("❌ Orangnya gaada di BinRoom!", ephemeral=True)
             return
         
         if target.bot:
-            await ctx.send("💢 Kartu keanggotaan hanya tersedia untuk member, bukan bot!", ephemeral=True)
+            await ctx.reply("💢 Kartu keanggotaan hanya tersedia untuk member, bukan bot!", ephemeral=True)
             return
         
         await ctx.defer()
@@ -87,7 +87,7 @@ class BinroomID(commands.Cog):
         url_avatar = target.display_avatar.with_format("png").with_size(256).url
         async with self.session.get(url_avatar) as resp:
             if resp.status != 200:
-                await ctx.send("😵 Gagal membaca foto profil, coba lagi nanti...")
+                await ctx.reply("😵 Gagal membaca foto profil, coba lagi nanti...")
                 return
             byte_avatar = await resp.read()
         
@@ -106,7 +106,7 @@ class BinroomID(commands.Cog):
         )
         
         berkas = discord.File(fp=buffer_kartu, filename=f"membership_{target.id}.png")
-        await ctx.send(file=berkas)
+        await ctx.reply(file=berkas)
         
         if random.randint(1, 7) == 1:
             await ctx.send(content=(
@@ -122,7 +122,7 @@ class BinroomID(commands.Cog):
     @app_commands.describe(nama_baru="Nama baru (maksimal 32 karakter).")
     async def custom_name(self, ctx:commands.Context, *, nama_baru:str):
         if len(nama_baru) > 32:
-            await ctx.send("💢 Nama kustom tidak boleh lebih dari 32 huruf!", ephemeral=True)
+            await ctx.reply("💢 Nama kustom tidak boleh lebih dari 32 huruf!", ephemeral=True)
             return
         
         await ctx.defer()
@@ -131,12 +131,12 @@ class BinroomID(commands.Cog):
         
         await database.save_binroom_custom_name(ctx.author.id, nama_baru, urutan_gabung)
         
-        await ctx.send(f"Nama pada kartu berhasil diperbarui menjadi: **{nama_baru}**. Membuat ulang kartu...")
+        await ctx.reply(f"Nama pada kartu berhasil diperbarui menjadi: **{nama_baru}**. Membuat ulang kartu...")
         
         await self.membership(ctx, member=ctx.author)
         
         if random.randint(1, 7) == 1:
-            await ctx.send(content=(
+            await ctx.reply(content=(
                 "-# Kartu ini **bisa kamu cetak**, karena ukurannya __8.56 x 5.4 cm__ __300 dpi__, sudah sesuai ukuran kartu pada umumnya.\n"
                 "Cocok buat kamu taruh di dompet dan lain-lain. 😉"
             ))
@@ -152,12 +152,12 @@ class BinroomID(commands.Cog):
         data_db = await database.get_binroom_member(ctx.author.id)
         
         if not data_db or not data_db.get("custom_name"):
-            await ctx.send("ℹ️ Kamu belum pernah mengatur nama kustom pada kartu keanggotaan.", ephemeral=True)
+            await ctx.reply("ℹ️ Kamu belum pernah mengatur nama kustom pada kartu keanggotaan.", ephemeral=True)
             return
         
         await database.reset_binroom_custom_name(ctx.author.id)
         
-        await ctx.send("✅ Nama kustom berhasil dihapus. Kartu kamu dikembalikan ke nama tampilan Discord semula. Membuat ulang kartu...")
+        await ctx.reply("✅ Nama kustom berhasil dihapus. Kartu kamu dikembalikan ke nama tampilan Discord semula. Membuat ulang kartu...")
         
         await self.membership(ctx, member=ctx.author)
     
@@ -165,10 +165,10 @@ class BinroomID(commands.Cog):
     async def membership_error(self, ctx:commands.Context, error:commands.CommandError):
         
         if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
-            await ctx.send("❌ Orangnya gaada di BinRoom!", ephemeral=True)
+            await ctx.reply("❌ Orangnya gaada di BinRoom!", ephemeral=True)
             
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"⏳ Sabar! Tunggu {error.retry_after:.1f} detik lagi sebelum gunain command ini.", ephemeral=True)
+            await ctx.reply(f"⏳ Sabar! Tunggu {error.retry_after:.1f} detik lagi sebelum gunain command ini.", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(BinroomID(bot))

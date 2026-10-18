@@ -90,7 +90,7 @@ class Eval(commands.Cog):
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(discord.ui.TextDisplay(content=footer))
         
-        return await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        return await ctx.reply(view=discord.ui.LayoutView().add_item(container))
 
     @commands.hybrid_command(name="eval", aliases=["ev"], hidden=True)
     @commands.is_owner()
@@ -158,7 +158,7 @@ class Eval(commands.Cog):
             await self._kirim_container(ctx, teks, warna=warna, tag_bhs=tag_bhs, footer=footer)
         
         if len(jumlah_teks) > 5:
-            await ctx.send("```... [Output melebihi batas teks]```")
+            await ctx.reply("```... [Output melebihi batas teks]```")
     
     @_eval.error
     async def error(self, ctx, error:commands.CommandError):
@@ -166,9 +166,9 @@ class Eval(commands.Cog):
             error = error.original
         
         if isinstance(error, commands.NotOwner):
-            await ctx.send("Cuma kak Abin yang bisa pakai command ini! 💢")
+            await ctx.reply("Cuma kak Abin yang bisa pakai command ini! 💢")
         else:
-            await ctx.send(f"Ada error internal:\n`{type(error).__name__}: {error}`")
+            await ctx.reply(f"Ada error internal:\n`{type(error).__name__}: {error}`")
 
 
 async def setup(bot):

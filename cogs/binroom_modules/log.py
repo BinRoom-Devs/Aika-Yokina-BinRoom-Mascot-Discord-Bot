@@ -325,9 +325,9 @@ class ServerLogger(commands.Cog):
             cocok = difflib.get_close_matches(invoked_cmd, semua_cmd, n=1, cutoff=0.6)
             if cocok:
                 saran = cocok[0]
-                await ctx.send(f"❌ Perintah `{invoked_cmd}` tidak ditemukan.\n\n-# Mungkin maksudmu `{ctx.prefix}{saran}`?")
+                await ctx.reply(f"❌ Perintah `{invoked_cmd}` tidak ditemukan.\n\n-# Mungkin maksudmu `{ctx.prefix}{saran}`?")
             else:
-                await ctx.send(f"❌ Perintah `{invoked_cmd}` tidak ditemukan.")
+                await ctx.reply(f"❌ Perintah `{invoked_cmd}` tidak ditemukan.")
             return
         
         channel = await self.buka_channel_logging(ctx.guild)

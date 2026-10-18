@@ -243,7 +243,7 @@ class PFP(commands.Cog):
         
         view = discord.ui.LayoutView(timeout=None)
         view.add_item(container)
-        await ctx.send(view=view, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.reply(view=view, allowed_mentions=discord.AllowedMentions.none())
     
     # ------------------------------------------------------------------
     # Command
@@ -295,9 +295,9 @@ class PFP(commands.Cog):
         view.add_item(_container_pesan(f"### {judul}", pesan, warna=pengaturan.warna_merah))
         
         try:
-            await ctx.send(view=view)
+            await ctx.reply(view=view)
         except discord.HTTPException:
-            await ctx.send(f"**{judul}**\n{pesan}")
+            await ctx.reply(f"**{judul}**\n{pesan}")
 
 
 async def setup(bot:commands.Bot):

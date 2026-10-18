@@ -13,7 +13,7 @@ class Slowmode(commands.Cog):
     @commands.bot_has_permissions(manage_channels=True)
     async def slowmode(self, ctx: commands.Context, seconds: int):
         if seconds < 0 or seconds > 21600:
-            await ctx.send("Durasi slowmode harus antara 0 hingga 21600 detik (6 jam).", ephemeral=True)
+            await ctx.reply("Durasi slowmode harus antara 0 hingga 21600 detik (6 jam).", ephemeral=True)
             return
         
         await ctx.channel.edit(slowmode_delay=seconds)
@@ -24,16 +24,16 @@ class Slowmode(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content=f"Slowmode channel ini telah {status}."))
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
     
     @slowmode.error
     async def slowmode_error(self, ctx:commands.Context, error:commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Manage Channels` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Manage Channels` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Manage Channels` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Manage Channels` untuk melakukan aksi ini.", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Tentukan durasi slowmode dalam detik (contoh: `/slowmode 5`).", ephemeral=True)
+            await ctx.reply("Tentukan durasi slowmode dalam detik (contoh: `/slowmode 5`).", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

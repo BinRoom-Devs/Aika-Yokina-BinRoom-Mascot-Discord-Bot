@@ -30,7 +30,13 @@ class AikaYokina(commands.Bot):
         return True
 
 
-aika = AikaYokina(command_prefix="ak!", intents=intents, case_insensitive=True, help_command=None)
+aika = AikaYokina(
+    command_prefix="ak!",
+    intents=intents,
+    case_insensitive=True,
+    help_command=None,
+    allowed_mentions=discord.AllowedMentions.none()
+)
 
 
 @aika.check

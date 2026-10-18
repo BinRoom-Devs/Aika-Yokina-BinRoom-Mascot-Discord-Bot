@@ -7,7 +7,7 @@ class SourceCode(commands.Cog):
 
     @commands.hybrid_command(name="source-code", description="Nampilin source code nya Aika.")
     async def source_code(self, ctx):
-        await ctx.send("Oh, kamu mau liat isi kodinganku? 😳\n\nhttps://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot")
+        await ctx.reply("Oh, kamu mau liat isi kodinganku? 😳\n\nhttps://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot")
 
 
 async def setup(bot):

@@ -5,8 +5,25 @@ Perubahan pada bot akan dicatat di file ini.
 Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [pemversian semantik (*Semantic Versioning*)](https//semver.org/spec/v2.0.0.html).
 
 
-## v3.3.0 - 14 Okt 2026
+## v3.3.1 - ? Okt 2026
+### Perubahan
+- Semua metode pengiriman pesan (alias tanggapan atas command user) diubah dari `send` biasa jadi `reply`.
+
+- (Dalam kodingan) Balik pake `requirements.txt` karna ternyata Wispbyte (tempat hostingan bot nya) gak support `pyproject.toml`. 💔
+
+### Perbaikan
+= Bugfix di fitur streak member pada pesan pemberitahuan new streak.
+
+- Perbaikan fitur `user_info` karna sebelumnya malah ada isi embed/container yang kehapus.
+
+- Bugfix di fitur laporan statistik harian server tiap tengah malam (plsss work...)
+
 ### Penambahan:
+- ...satu command easter egg 🤫
+
+
+## v3.3.0 - 14 Okt 2026
+### Penambahan
 - Fitur sanitasi output rumus matematika jika model AI Groq-nya nge-output sintaks LateX.
 
 - Implementasi `lazy import` sederhana sebagai persiapan update ke Python v3.15 tapi tetap mempertahankan backward compatibility (padahal blok `import`-nya cuma dipindah dari atas file ke dalam blok eksekusi supya jadi `lazy` secara struktur, iya sih supaya backward-compatible).
@@ -15,7 +32,7 @@ Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1
 
 - Command dan kategori baru: moderasi! `kick`, `ban`, `tempban`, `unban`, `timeout`/`mute`, `untimeout`/`unmute`, `purge`, `purgeuser`, `slowmode`, `lock`, `unlock`.
 
-### Perubahan:
+### Perubahan
 - Tombol-tombol pada command `snipe` dipindahkan ke bawah / ke luar container/embed.
 
 - Perubahan tampilan embed/container pada command `pfp` dan `banner`. Sebelumnya pakai mode tombol buat pindah2 antara server dan global, sekarang bersebelahan (utk pfp) / bersusunan (utk banner).
@@ -36,7 +53,7 @@ Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1
 
 - Bugfix pada logging sambutan untuk membedakan mana member yang keluar sendiri, yang di-kick, atau yang di-ban.
 
-### Penghapusan:
+### Penghapusan
 - Scanner Sightengine dan dashboard NiceGUI.
 
 - Logging kalau sesi bot dilanjutkan.

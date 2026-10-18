@@ -19,7 +19,7 @@ class Untimeout(commands.Cog):
         reason: str | None = "*Tanpa alasan.*"
     ):
         if not member.is_timed_out():
-            await ctx.send("Member ini lagi nggak di-timeout.", ephemeral=True)
+            await ctx.reply("Member ini lagi nggak di-timeout.", ephemeral=True)
             return
         
         await member.timeout(None, reason=reason)
@@ -29,7 +29,7 @@ class Untimeout(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content=f"Alasan: {reason}"))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
@@ -37,11 +37,11 @@ class Untimeout(commands.Cog):
     @untimeout.error
     async def untimeout_error(self, ctx:commands.Context, error:commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Moderate Members` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Moderate Members` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Moderate Members` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Moderate Members` untuk melakukan aksi ini.", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Tentukan member yang ingin dilepas timeout-nya.", ephemeral=True)
+            await ctx.reply("Tentukan member yang ingin dilepas timeout-nya.", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):

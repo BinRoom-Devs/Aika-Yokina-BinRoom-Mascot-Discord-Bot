@@ -18,7 +18,7 @@ class Lock(commands.Cog):
     async def lock(self, ctx:commands.Context):
         overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
         if overwrite.send_messages is False:
-            await ctx.send("Channel ini sudah dalam kondisi terkunci.", ephemeral=True)
+            await ctx.reply("Channel ini sudah dalam kondisi terkunci.", ephemeral=True)
             return
         
         overwrite.send_messages = False
@@ -29,14 +29,14 @@ class Lock(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content="Akses kirim pesan untuk `@everyone` telah ditutup."))
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
     
     @lock.error
     async def lock_error(self, ctx:commands.Context, error:commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Manage Channels` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Manage Channels` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Manage Channels` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Manage Channels` untuk melakukan aksi ini.", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):

@@ -25,9 +25,10 @@ except ImportError:
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = str(config.pengaturan.jalur_database_terselesaikan)
+WIB = timezone(timedelta(hours=7))
 
 
-def _read_json_file(file_path: str) -> Any:
+def _read_json_file(file_path:str) -> Any:
     """Function pembantu buat ngebaca file JSON secara sinkronis di dalam thread eksekutor."""
     
     with open(file_path, "r", encoding="utf-8") as f:
@@ -60,7 +61,6 @@ async def get_connection():
 # -----------------------------------------------------------------------------
 # inisialisasi & migrasi
 # -----------------------------------------------------------------------------
-
 async def init_db() -> None:
     """Nginisialisasi tabel sama indeks di database, skalian nge-run auto-migration kalo perlu."""
     
@@ -287,16 +287,19 @@ async def auto_migrate_from_json() -> None:
                             INSERT INTO downtime_history (status, timestamp, alasan)
                             VALUES (?, ?, ?)
                         """, batch)
-
+            
             # migrasi daily stats
             cursor = await conn.execute("SELECT COUNT(*) FROM daily_stats")
             row = await cursor.fetchone()
             if row and row[0] == 0:
                 stats_file = os.path.join(data_dir, "stats_harian.json")
+                hari_ini = datetime.now(WIB).strftime("%Y-%m-%d")
                 if os.path.exists(stats_file):
                     data = await asyncio.to_thread(_read_json_file, stats_file)
-                    batch = []
+                    batch = [("_tanggal_terakhir", data.get("_tanggal_terakhir", hari_ini))]
                     for k, v in data.items():
+                        if k == "_tanggal_terakhir":
+                            continue
                         if isinstance(v, (dict, list)):
                             val_str = json_dumps(v)
                         else:
@@ -306,8 +309,14 @@ async def auto_migrate_from_json() -> None:
                         await conn.executemany("""
                             INSERT INTO daily_stats (key, value)
                             VALUES (?, ?)
+                            ON CONFLICT(key) DO UPDATE SET value = excluded.value
                         """, batch)
-
+                else:
+                    await conn.execute(
+                        "INSERT INTO daily_stats (key, value) VALUES (?, ?)",
+                        ("_tanggal_terakhir", hari_ini)
+                    )
+            
             # migrasi vc durations
             cursor = await conn.execute("SELECT COUNT(*) FROM vc_durations")
             row = await cursor.fetchone()
@@ -337,7 +346,6 @@ async def auto_migrate_from_json() -> None:
 # -----------------------------------------------------------------------------
 # Lore Aika
 # -----------------------------------------------------------------------------
-
 async def get_lore() -> dict[str, Any]:
     """Ngebaca pengaturan lore-nya Aika."""
     
@@ -374,7 +382,6 @@ async def save_lore(original_illustrator: str, origin_story: str, contributors: 
 # -----------------------------------------------------------------------------
 # Pengaturan Memori Chat Para Member
 # -----------------------------------------------------------------------------
-
 async def get_user_chat(user_id: int) -> list[dict[str, str]]:
     """Ngebaca semua pesan chat buat satu member di Discord."""
     
@@ -432,7 +439,6 @@ async def load_all_user_chats() -> dict[int, list[dict[str, str]]]:
 # -----------------------------------------------------------------------------
 # Profil Para Player GD
 # -----------------------------------------------------------------------------
-
 async def upsert_gd_player(player_data: dict[str, Any]) -> None:
     """Masukin atau ngupdate statistiknya satu player GD."""
     
@@ -609,7 +615,7 @@ async def get_daily_stats() -> tuple[dict[str, Any], str | None]:
         return result, tanggal_terakhir
 
 
-async def save_daily_stats(data_stats:dict[str,Any], tanggal_str:str) -> None:
+async def save_daily_stats(data_stats: dict[str, Any], tanggal_str: str) -> None:
     """Nyimpan statistik harian dan tanggal rekamannya ke database."""
     batch = [("_tanggal_terakhir", tanggal_str)]
     
@@ -628,17 +634,21 @@ async def save_daily_stats(data_stats:dict[str,Any], tanggal_str:str) -> None:
             """, batch)
 
 
-async def reset_daily_stats() -> None:
-    """Ngapus seluruh data statistik harian."""
+async def reset_daily_stats(tanggal_str: str | None = None) -> None:
+    """Ngereset seluruh data statistik harian sekaligus mempertahankan penanda tanggal hari ini."""
+    hari_ini = tanggal_str or datetime.now(WIB).strftime("%Y-%m-%d")
     async with get_connection() as conn:
         await conn.execute("DELETE FROM daily_stats")
+        await conn.execute(
+            "INSERT INTO daily_stats (key, value) VALUES (?, ?)",
+            ("_tanggal_terakhir", hari_ini)
+        )
         await conn.commit()
 
 
 # -----------------------------------------------------------------------------
 # Durasi VC (Voice Channel)
 # -----------------------------------------------------------------------------
-
 async def get_vc_durations() -> dict[str, dict[int, str]]:
     """Ngebaca status durasi VC, live streaming, dan VC kosong dari database."""
     async with get_connection() as conn:
@@ -741,13 +751,9 @@ async def delete_binroom_member(user_id: int) -> None:
 # -----------------------------------------------------------------------------
 # Fitur Streak Harian Member
 # -----------------------------------------------------------------------------
-
-WIB = timezone(timedelta(hours=7))
-
 async def proses_streak_harian(user_id: int) -> dict[str, Any]:
     wib_skrg = datetime.now(WIB)
     str_hari_ini = wib_skrg.strftime("%Y-%m-%d")
-    str_kemarin = (wib_skrg - timedelta(days=1)).strftime("%Y-%m-%d")
     
     async with get_connection() as conn:
         cursor = await conn.execute("""
@@ -757,7 +763,7 @@ async def proses_streak_harian(user_id: int) -> dict[str, Any]:
         row = await cursor.fetchone()
         
         if not row:
-            #pertama kali
+            # Pertama kali user aktif
             await conn.execute("""
                 INSERT INTO streak_member 
                 (user_id, streak_skrg, streak_terlama, mulai_skrg, terakhir_aktif, mulai_terlama, selesai_terlama)
@@ -776,11 +782,18 @@ async def proses_streak_harian(user_id: int) -> dict[str, Any]:
         mulai_terlama = row["mulai_terlama"] or str_hari_ini
         selesai_terlama = row["selesai_terlama"] or str_hari_ini
         
-        if terakhir_aktif == str_kemarin: 
-            streak_skrg += 1 #lanjut
+        try:
+            dt_terakhir = datetime.strptime(terakhir_aktif, "%Y-%m-%d").date()  # noqa: DTZ007
+            dt_sekarang = wib_skrg.date()
+            selisih_hari = (dt_sekarang - dt_terakhir).days
+        except (ValueError, TypeError):
+            selisih_hari = 999
+        
+        if selisih_hari == 1:
+            streak_skrg += 1
             status = "streak_naik"
         else:
-            streak_skrg = 1 #reset
+            streak_skrg = 1
             mulai_skrg = str_hari_ini
             status = "streak_reset"
         
@@ -801,7 +814,7 @@ async def proses_streak_harian(user_id: int) -> dict[str, Any]:
         """, (streak_skrg, streak_terlama, mulai_skrg, str_hari_ini, mulai_terlama, selesai_terlama, user_id))
         await conn.commit()
         
-        return {"status":status, "streak_skrg":streak_skrg}
+        return {"status": status, "streak_skrg": streak_skrg}
 
 async def baca_streak_member(user_id: int) -> dict[str, Any]:
     wib_skrg = datetime.now(WIB)

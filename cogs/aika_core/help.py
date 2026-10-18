@@ -159,11 +159,11 @@ class Help(commands.Cog):
             cmd = self.bot.get_command(command_name)
             
             if not cmd or cmd.hidden:
-                await ctx.send("❌🤫 Perintah ini tersembunyi / tidak publik.", ephemeral=True)
+                await ctx.reply("❌🤫 Perintah ini tersembunyi / tidak publik.", ephemeral=True)
                 return
             
             container = await self.format_command_help(cmd, ctx)
-            await ctx.send(
+            await ctx.reply(
                 view=LayoutView().add_item(container),
                 allowed_mentions=AllowedMentions.none()
             )
@@ -215,7 +215,7 @@ class Help(commands.Cog):
             )
         )
         
-        await ctx.send(
+        await ctx.reply(
             view=LayoutView().add_item(container).add_item(tombol),
             allowed_mentions=AllowedMentions.none()
         )

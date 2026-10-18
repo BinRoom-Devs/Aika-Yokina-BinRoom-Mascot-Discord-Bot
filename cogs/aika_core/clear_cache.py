@@ -94,7 +94,7 @@ class CacheManager(commands.Cog):
             
             view = discord.ui.LayoutView()
             view.add_item(container)
-            await ctx.send(view=view)
+            await ctx.reply(view=view)
 
 
 async def setup(bot):

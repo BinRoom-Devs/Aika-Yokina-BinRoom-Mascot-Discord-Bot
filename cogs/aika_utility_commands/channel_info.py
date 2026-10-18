@@ -143,7 +143,7 @@ class ChannelInfo(commands.Cog):
             except (discord.Forbidden, discord.HTTPException):
                 container.add_item(discord.ui.TextDisplay(content="- **Webhook:** (tidak ada izin akses)"))
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
 
 
 async def setup(bot: commands.Bot):

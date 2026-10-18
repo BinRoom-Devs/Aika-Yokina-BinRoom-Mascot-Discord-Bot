@@ -238,7 +238,7 @@ class Info(commands.Cog):
         latensi_ws = round(self.bot.latency * 1000)
         
         waktu_mulai_api = time.perf_counter()
-        pesan = await ctx.send("Memuat info Aika...")
+        pesan = await ctx.reply("Memuat info Aika...")
         waktu_selesai_pesan_awal = time.perf_counter()
         
         latensi_api = round((waktu_selesai_pesan_awal - waktu_mulai_api) * 1000)

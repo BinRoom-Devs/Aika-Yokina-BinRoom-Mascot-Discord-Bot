@@ -36,12 +36,12 @@ class Timeout(commands.Cog):
         reason: str | None = "*Tanpa alasan.*"
     ):
         if member.top_role >= ctx.author.top_role and ctx.author != ctx.guild.owner:
-            await ctx.send("💢 Posisi role member-nya setara atau lebih tinggi dari punyamu!", ephemeral=True)
+            await ctx.reply("💢 Posisi role member-nya setara atau lebih tinggi dari punyamu!", ephemeral=True)
             return
         
         td = parse_duration(duration)
         if not td or td > datetime.timedelta(days=28):
-            await ctx.send("Durasi tidak valid atau melebihi batas maksimal Discord (28 hari). Contoh format: `15m`, `2h`.", ephemeral=True)
+            await ctx.reply("Durasi tidak valid atau melebihi batas maksimal Discord (28 hari). Contoh format: `15m`, `2h`.", ephemeral=True)
             return
         
         await member.timeout(td, reason=reason)
@@ -51,7 +51,7 @@ class Timeout(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content=f"Durasi: {duration}\nAlasan: {reason}"))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )
@@ -59,11 +59,11 @@ class Timeout(commands.Cog):
     @timeout.error
     async def timeout_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Kamu tidak punya izin `Moderate Members` untuk menggunakan command ini.", ephemeral=True)
+            await ctx.reply("Kamu tidak punya izin `Moderate Members` untuk menggunakan command ini.", ephemeral=True)
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send("Bot tidak punya izin `Moderate Members` untuk melakukan aksi ini.", ephemeral=True)
+            await ctx.reply("Bot tidak punya izin `Moderate Members` untuk melakukan aksi ini.", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Gunakan format: `/timeout [member] [durasi] [alasan]`", ephemeral=True)
+            await ctx.reply("Gunakan format: `/timeout [member] [durasi] [alasan]`", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

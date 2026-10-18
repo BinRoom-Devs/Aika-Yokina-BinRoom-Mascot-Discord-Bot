@@ -6,7 +6,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-VERSI_AIKA = "v3.3.0"
+VERSI_AIKA = "v3.3.1"
 LINK_REPO = "https://github.com/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot"
 API_GITHUB = "https://api.github.com/repos/BinRoom-Devs/Aika-Yokina-BinRoom-Mascot-Discord-Bot/commits/main"
 
@@ -84,7 +84,7 @@ class VersiAika(commands.Cog):
             discord.ui.Button(label="Riwayat pembaruan", url=link_changelog, style=discord.ButtonStyle.link)
         )
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container).add_item(deretan_tombol))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container).add_item(deretan_tombol))
 
 
 async def setup(bot):

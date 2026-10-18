@@ -115,7 +115,7 @@ class LogTerminal(commands.Cog):
         output_mentah = list(TAMPUNGAN_LOG)[-total_baris:] 
         
         if not output_mentah:
-            await ctx.send("Belum ada log yang tersimpan di memori.", ephemeral=True) 
+            await ctx.reply("Belum ada log yang tersimpan di memori.", ephemeral=True) 
             return
         
         warna_cont = discord.Color(pengaturan.warna_aika) 
@@ -135,12 +135,12 @@ class LogTerminal(commands.Cog):
         container.add_item(discord.ui.TextDisplay(content=judul_cont))
         container.add_item(discord.ui.TextDisplay(content=f"```ansi\n{log_terformat}\n```"))
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
     
     @terminal.error
     async def error_cek_terminal(self, ctx:commands.Context, error:Exception):
         if isinstance(error, commands.NotOwner):
-            await ctx.send("❌ Gaboleh, cuma owner yang boleh pake ini command.", ephemeral=True)
+            await ctx.reply("❌ Gaboleh, cuma owner yang boleh pake ini command.", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):

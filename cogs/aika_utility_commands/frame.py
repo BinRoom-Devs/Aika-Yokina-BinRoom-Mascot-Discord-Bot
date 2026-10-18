@@ -8,47 +8,6 @@ from discord.ext import commands
 from config import pengaturan
 
 
-class LihatFrame(discord.ui.LayoutView):
-    def __init__(
-        self,
-        cog: AvatarDecoration,
-        ctx: commands.Context,
-        user: discord.User | discord.Member,
-        filename: str,
-        warna: int,
-        beranimasi: bool,
-        total_frame: int,
-        tinggi_hd: int
-    ):
-        super().__init__(timeout=180)
-        self.cog = cog
-        self.ctx = ctx
-        self.user = user
-        self.message = None
-        
-        str_format = "GIF" if beranimasi else "PNG"
-        
-        container = discord.ui.Container(accent_color=warna)
-        container.add_item(discord.ui.TextDisplay(content=f"## Frame Avatar si {self.user.mention}"))
-        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-        
-        container.add_item(discord.ui.MediaGallery(discord.MediaGalleryItem(media=f"attachment://{filename}")))
-        
-        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
-        
-        frames = f"  ·  {total_frame} frames" if beranimasi else ''
-        ukuran = f"  ·  {tinggi_hd}p" if tinggi_hd else ''
-        sku_id = f"  ·  `SKU: {self.user.avatar_decoration_sku_id}`" if getattr(self.user, "avatar_decoration_sku_id", None) else ''
-        
-        decoration = self.user.avatar_decoration
-        link_hd = decoration.with_size(4096).url if decoration else ""
-        
-        footer = f"-# [Link Asli]({link_hd})  ·  {str_format}{ukuran}{frames}{sku_id}"
-        container.add_item(discord.ui.TextDisplay(content=footer))
-        
-        self.add_item(container)
-
-
 class AvatarDecoration(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
@@ -193,14 +152,14 @@ class AvatarDecoration(commands.Cog):
                 container.add_item(discord.ui.TextDisplay(content=f"{user_obj.mention} tidak sedang menggunakan bingkai/frame avatar (Avatar Decoration)."))
                 
                 view = discord.ui.LayoutView().add_item(container)
-                await ctx.send(view=view, allowed_mentions=discord.AllowedMentions.none())
+                await ctx.reply(view=view, allowed_mentions=discord.AllowedMentions.none())
                 return
             
             decoration_url = decoration.with_size(4096).url
             frame_bytes = await self._unduh_bytes(decoration_url)
             
             if not frame_bytes:
-                await ctx.send("Gagal mengunduh aset bingkai dari Discord.", ephemeral=True)
+                await ctx.reply("Gagal mengunduh aset bingkai dari Discord.", ephemeral=True)
                 return
             
             img_bytes, filename, warna, tinggi_hd, beranimasi, total_frame = await asyncio.to_thread(
@@ -211,7 +170,7 @@ class AvatarDecoration(commands.Cog):
             
             view = LihatFrame(self, ctx, user_obj, filename, warna, beranimasi, total_frame, tinggi_hd)
             
-            await ctx.send(
+            await ctx.reply(
                 file=file_lampiran,
                 view=view,
                 allowed_mentions=discord.AllowedMentions.none()
@@ -241,9 +200,50 @@ class AvatarDecoration(commands.Cog):
         view.add_item(container)
         
         try:
-            await ctx.send(view=view)
+            await ctx.reply(view=view)
         except discord.HTTPException:
-            await ctx.send(f"**{judul}**\n{pesan}")
+            await ctx.reply(f"**{judul}**\n{pesan}")
+
+
+class LihatFrame(discord.ui.LayoutView):
+    def __init__(
+        self,
+        cog: AvatarDecoration,
+        ctx: commands.Context,
+        user: discord.User | discord.Member,
+        filename: str,
+        warna: int,
+        beranimasi: bool,
+        total_frame: int,
+        tinggi_hd: int
+    ):
+        super().__init__(timeout=180)
+        self.cog = cog
+        self.ctx = ctx
+        self.user = user
+        self.message = None
+        
+        str_format = "GIF" if beranimasi else "PNG"
+        
+        container = discord.ui.Container(accent_color=warna)
+        container.add_item(discord.ui.TextDisplay(content=f"## Frame Avatar si {self.user.mention}"))
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        
+        container.add_item(discord.ui.MediaGallery(discord.MediaGalleryItem(media=f"attachment://{filename}")))
+        
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
+        
+        frames = f"  ·  {total_frame} frames" if beranimasi else ''
+        ukuran = f"  ·  {tinggi_hd}p" if tinggi_hd else ''
+        sku_id = f"  ·  `SKU: {self.user.avatar_decoration_sku_id}`" if getattr(self.user, "avatar_decoration_sku_id", None) else ''
+        
+        decoration = self.user.avatar_decoration
+        link_hd = decoration.with_size(4096).url if decoration else ""
+        
+        footer = f"-# [Link Asli]({link_hd})  ·  {str_format}{ukuran}{frames}{sku_id}"
+        container.add_item(discord.ui.TextDisplay(content=footer))
+        
+        self.add_item(container)
 
 
 async def setup(bot:commands.Bot):

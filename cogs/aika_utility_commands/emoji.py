@@ -181,7 +181,7 @@ class Emoji(commands.Cog):
                 container.add_item(discord.ui.TextDisplay(content="### ❌ Emoji Tidak Valid"))
                 container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container.add_item(discord.ui.TextDisplay(content="Coba pastiin emoji yang dimasukin beneran valid."))
-                await ctx.send(view=discord.ui.LayoutView().add_item(container))
+                await ctx.reply(view=discord.ui.LayoutView().add_item(container))
                 return
             
             hasil, nama_emoji, id_emoji, link_emoji = respons_proses
@@ -192,7 +192,7 @@ class Emoji(commands.Cog):
                 container.add_item(discord.ui.TextDisplay(content="### ❌ Gagal Memproses Gambar"))
                 container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container.add_item(discord.ui.TextDisplay(content="Gagal mengonversi atau membaca data gambar emoji."))
-                await ctx.send(view=discord.ui.LayoutView().add_item(container))
+                await ctx.reply(view=discord.ui.LayoutView().add_item(container))
                 return
             
             str_format = "GIF" if beranimasi else "PNG"
@@ -217,7 +217,7 @@ class Emoji(commands.Cog):
             footer = f"-# [Link]({link_emoji})  ·  {str_format}{ukuran_str}{frames_str}{id_str}"
             container.add_item(discord.ui.TextDisplay(content=footer))
             
-            await ctx.send(file=file_discord, view=discord.ui.LayoutView().add_item(container))
+            await ctx.reply(file=file_discord, view=discord.ui.LayoutView().add_item(container))
 
 
 async def setup(bot:commands.Bot):

@@ -213,7 +213,7 @@ class PendeteksiGangguan(commands.Cog):
     )
     async def status(self, ctx:commands.Context):
         if not self.riwayat:
-            await ctx.send("Aika masih mantau status aktifnya Aika. Coba lagi nanti. 😌")
+            await ctx.reply("Aika masih mantau status aktifnya Aika. Coba lagi nanti. 😌")
             return
         
         emoji_hijau, emoji_kuning, emoji_merah = await self.buat_emoji_bar()
@@ -260,7 +260,7 @@ class PendeteksiGangguan(commands.Cog):
         
         container.add_item(TextDisplay(content=f"-# Diperbarui setiap 30 menit  •  {footer_tambahan}"))
         
-        await ctx.send(view=LayoutView().add_item(container))
+        await ctx.reply(view=LayoutView().add_item(container))
 
 
 class SambungUlangOtomatis(commands.Cog):

@@ -55,11 +55,11 @@ class VCStats(commands.Cog):
             if isinstance(ctx.author, discord.Member) and ctx.author.voice:
                 channel = ctx.author.voice.channel
             else:
-                await ctx.send("❌ Kamu harus berada di Voice Channel atau memilih channel target!", ephemeral=True)
+                await ctx.reply("❌ Kamu harus berada di Voice Channel atau memilih channel target!", ephemeral=True)
                 return
         
         if not channel.members:
-            await ctx.send(f"⚠️ Voice channel {channel.mention} sedang kosong.", ephemeral=True)
+            await ctx.reply(f"⚠️ Voice channel {channel.mention} sedang kosong.", ephemeral=True)
             return
         
         logger_cog = self.bot.get_cog("ServerLogger")
@@ -86,7 +86,7 @@ class VCStats(commands.Cog):
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(discord.ui.TextDisplay(content="\n".join(daftar_member_str)))
         
-        await ctx.send(
+        await ctx.reply(
             view=discord.ui.LayoutView().add_item(container),
             allowed_mentions=discord.AllowedMentions.none()
         )

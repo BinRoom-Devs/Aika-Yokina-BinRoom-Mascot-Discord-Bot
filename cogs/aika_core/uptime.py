@@ -43,7 +43,7 @@ class Uptime(commands.Cog):
             content=f"-# Terakhir restart: <t:{timestamp_awal}:D> <t:{timestamp_awal}:T>")
         )
         
-        await ctx.send(view=discord.ui.LayoutView().add_item(container))
+        await ctx.reply(view=discord.ui.LayoutView().add_item(container))
 
 
 async def setup(bot:commands.Bot):
