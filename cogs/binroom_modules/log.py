@@ -1,4 +1,3 @@
-import difflib
 import os
 import secrets
 import sys
@@ -309,25 +308,6 @@ class ServerLogger(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx:commands.Context, error:commands.CommandError) -> None:
         if not ctx.guild or ctx.interaction:
-            return
-        
-        if isinstance(error, commands.CommandNotFound):
-            invoked_cmd = ctx.invoked_with
-            if not invoked_cmd:
-                return
-            
-            semua_cmd = []
-            for cmd in self.bot.walk_commands():
-                if not cmd.hidden:
-                    semua_cmd.append(cmd.qualified_name)
-                    semua_cmd.extend(cmd.aliases)
-            
-            cocok = difflib.get_close_matches(invoked_cmd, semua_cmd, n=1, cutoff=0.6)
-            if cocok:
-                saran = cocok[0]
-                await ctx.reply(f"❌ Perintah `{invoked_cmd}` tidak ditemukan.\n\n-# Mungkin maksudmu `{ctx.prefix}{saran}`?")
-            else:
-                await ctx.reply(f"❌ Perintah `{invoked_cmd}` tidak ditemukan.")
             return
         
         channel = await self.buka_channel_logging(ctx.guild)

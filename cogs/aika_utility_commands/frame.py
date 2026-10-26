@@ -5,6 +5,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 
+#from PIL import Image (baris 29)
 from config import pengaturan
 
 

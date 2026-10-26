@@ -5,6 +5,7 @@ from functools import lru_cache
 import discord
 from discord.ext import commands
 
+#from PIL import Image, ImageSequence (baris 25)
 from config import pengaturan
 
 

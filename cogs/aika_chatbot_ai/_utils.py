@@ -4,6 +4,7 @@ import re
 
 import discord
 
+#from pylatexenc.latex2text import LatexNodes2Text (baris 20)
 from ._config import (
     RE_PEMISAH_BAGIAN,
     RE_PROSES_MIKIR,

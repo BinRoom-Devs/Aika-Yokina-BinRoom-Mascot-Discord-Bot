@@ -1,6 +1,7 @@
 """Berisi otak utama AI chatbot Aika."""
 
 import asyncio
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -8,6 +9,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+#from groq import Groq (baris 51)
+#from groq import RateLimitError (baris 148)
+#from groq import APIError, BadRequestError, RateLimitError (baris 466)
 import config
 import database
 
@@ -158,11 +162,20 @@ class AIPersona(commands.Cog):
         
         prompt_sistem = infokan_instruksi_sistem(self, adalah_admin, konteks_waktu, penalaran_nyala=penalaran_nyala)
         
-        konteks_final = list(chat)
+        batas_konteks_aktif = 20
+        konteks_final = [
+            {
+                "role": m["role"],
+                "content": (m["content"][:350].rsplit(" ", 1)[0] + "... [dipotong]")
+                if m["role"] == "assistant" and len(m["content"]) > 350 else m["content"]
+            }
+            for m in chat[-batas_konteks_aktif:]
+        ]
+        
         if channel_id and channel_id == self.target_channel_id:
             konteks_channel = self.dapatkan_konteks_channel(channel_id, user_id)
             if konteks_channel:
-                konteks_final = konteks_channel + chat
+                konteks_final = konteks_channel + konteks_final
         
         isi_pesan = [prompt_sistem] + konteks_final + [{"role": "user", "content": contents}]
         
@@ -175,7 +188,8 @@ class AIPersona(commands.Cog):
                 messages=isi_pesan,
                 temperature=0.2,
                 reasoning_effort="low" if penalaran_nyala else "none",
-                max_completion_tokens=4096 if penalaran_nyala else MAKS_TOKEN_RESPON
+                reasoning_format="hidden",
+                max_completion_tokens=4096 if penalaran_nyala else MAKS_TOKEN_RESPON,
             )
             
             respon = respon_mentah.parse()
@@ -212,6 +226,9 @@ class AIPersona(commands.Cog):
             
             teks_murni_dari_user = ekstrak_teksnya_doang(contents)
             teks_riwayat_bot = hapus_alur_berpikir(RE_HAPUS_TAG_KONTEN.sub("", teks_keluaran).strip())
+            
+            if penalaran_nyala and len(teks_riwayat_bot) > 350:
+                teks_riwayat_bot = teks_riwayat_bot[:350].rsplit(" ", 1)[0] + "... [penjelasan panjang dipotong di memori]"
             
             chat.append({"role": "user", "content": teks_murni_dari_user.strip()})
             chat.append({"role": "assistant", "content": teks_riwayat_bot})
@@ -378,13 +395,25 @@ class AIPersona(commands.Cog):
                 contents.append(data_gambar)
                 jumlah_gambar += 1
         
+        str_role_id = str(ID_ROLE_REASONING)
+        penalaran_nyala = (
+            any(role.id == ID_ROLE_REASONING for role in message.role_mentions)
+            or f"<@&{str_role_id}>" in message.content
+            or "@reasoning" in message.content.lower()
+        )
+        
         teks_bersih = message.clean_content
         if is_mentioned:
-            teks_bersih = message.content.replace(f"<@{self.bot.user.id}>", "").replace(f"<@!{self.bot.user.id}>", "").strip()
+            teks_bersih = (
+                message.content
+                .replace(f"<@{self.bot.user.id}>", "")
+                .replace(f"<@!{self.bot.user.id}>", "")
+                .replace(f"<@&{str_role_id}>", "")
+            )
+        teks_bersih = re.sub(r'@reasoning\b', '', teks_bersih, flags=re.IGNORECASE).strip()
         
         if teks_bersih:
             contents.insert(0, {"type": "text", "text": teks_bersih})
-        
         if not contents:
             if message.guild:
                 self.bot.dispatch(
@@ -396,13 +425,6 @@ class AIPersona(commands.Cog):
                     discord.Color(config.pengaturan.warna_merah)
                 )
             return
-        
-        str_role_id = str(ID_ROLE_REASONING)
-        penalaran_nyala = (
-            any(role.id == ID_ROLE_REASONING for role in message.role_mentions)
-            or f"<@&{str_role_id}>" in message.content
-            or "@reasoning" in message.content.lower()
-        )
         
         async with message.channel.typing():
             try:

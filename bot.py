@@ -1,4 +1,5 @@
 import asyncio
+import difflib
 import os
 import subprocess
 import sys
@@ -81,6 +82,47 @@ async def start_bot():
     
     await load_cogs()
     await aika.start(config.pengaturan.token_bot)
+
+
+@aika.event
+async def on_command_error(ctx:commands.Context, error:commands.CommandError):
+    if isinstance(error, commands.CommandNotFound):
+        invoked_cmd = ctx.invoked_with
+        if not invoked_cmd:
+            return
+        
+        slash_cmds = {cmd.name for cmd in aika.tree.get_commands()}
+        if invoked_cmd in slash_cmds:
+            await ctx.reply(
+                f"❌ Command `{invoked_cmd}` hanya tersedia via slash command.\n\n"
+                f"-# Coba `/{invoked_cmd}`."
+            )
+            return
+        
+        slash_mirip = difflib.get_close_matches(invoked_cmd, list(slash_cmds), n=1, cutoff=0.7)
+        if slash_mirip:
+            await ctx.reply(
+                f"❌ Perintah `{invoked_cmd}` tidak ditemukan.\n\n"
+                f"-# Maksudmu slash command `/{slash_mirip[0]}`?"
+            )
+            return
+        
+        semua_cmd = []
+        for cmd in aika.walk_commands():
+            if not cmd.hidden:
+                semua_cmd.append(cmd.qualified_name)
+                semua_cmd.extend(cmd.aliases)
+        
+        cocok = difflib.get_close_matches(invoked_cmd, semua_cmd, n=1, cutoff=0.6)
+        if cocok:
+            saran = cocok[0]
+            await ctx.reply(
+                f"❌ Command `{invoked_cmd}` tidak ditemukan.\n\n"
+                f"-# Mungkin maksudmu `{ctx.prefix}{saran}`?"
+            )
+        else:
+            await ctx.reply(f"❌ Command `{invoked_cmd}` tidak ditemukan.")
+        return
 
 
 def start_card_api(): #Card API, kartu tampilan bot yang muncul di readme github

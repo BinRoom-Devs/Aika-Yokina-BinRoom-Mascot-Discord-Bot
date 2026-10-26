@@ -10,7 +10,7 @@ class Uptime(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
         self.start_time = datetime.datetime.now(datetime.UTC)
-
+    
     def format_stopwatch(self, delta:datetime.timedelta) -> str:
         hari = delta.days
         jam, remainder = divmod(delta.seconds,3600)

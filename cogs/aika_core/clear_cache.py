@@ -6,11 +6,14 @@ from discord.ext import commands
 
 import config
 
+#from cogs.aika_core.terminal import TAMPUNGAN_LOG (baris 65)
+#from cogs.aika_utility_commands.new_snipe import CACHE_VALIDASI_CDN (baris 35)
+
 
 class CacheManager(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
-
+    
     @commands.hybrid_command(
         name="clear-cache",
         aliases=["refresh", "freemem", "flush", "optimize"],
@@ -20,7 +23,7 @@ class CacheManager(commands.Cog):
     async def clear_cache(self, ctx):
         async with ctx.typing():
             item_dihapus = []
-
+            
             snipe_cog = self.bot.get_cog('Snipe')
             if snipe_cog:
                 if hasattr(snipe_cog, 'snipes'):
@@ -35,7 +38,7 @@ class CacheManager(commands.Cog):
                     item_dihapus.append(f"Cache validasi link CDN: {ukuran_cache} link")
                 except ImportError:
                     pass
-
+            
             pfp_cog = self.bot.get_cog('PFP')
             if pfp_cog:
                 try:
@@ -43,7 +46,7 @@ class CacheManager(commands.Cog):
                     item_dihapus.append("Cache pemrosesan foto profil")
                 except AttributeError:
                     pass
-
+            
             ai_cog = self.bot.get_cog('AIPersona')
             if ai_cog:
                 if hasattr(ai_cog, 'req_minute'):
@@ -58,7 +61,7 @@ class CacheManager(commands.Cog):
                 if hasattr(ai_cog, 'tok_daily'):
                     ai_cog.tok_daily.clear()
                     item_dihapus.append("AI token daily rate limit")            
-
+            
             try:
                 from cogs.aika_core.terminal import TAMPUNGAN_LOG
                 log_size = len(TAMPUNGAN_LOG)
@@ -66,7 +69,7 @@ class CacheManager(commands.Cog):
                 item_dihapus.append(f"Log buffer terminal: {log_size} baris")
             except ImportError:
                 pass
-
+            
             if hasattr(self.bot, '_connection') and hasattr(self.bot._connection, '_cache'):
                 try:
                     ukuran_cache = len(self.bot._connection._cache)

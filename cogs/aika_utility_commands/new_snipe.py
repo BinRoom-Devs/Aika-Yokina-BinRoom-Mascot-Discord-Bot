@@ -8,6 +8,7 @@ import aiohttp
 import discord
 from discord.ext import commands, tasks
 
+#from PIL import Image (baris 67)
 from config import pengaturan
 
 BATAS_UKURAN_ATTACHMENT = 8 * 1024 * 1024

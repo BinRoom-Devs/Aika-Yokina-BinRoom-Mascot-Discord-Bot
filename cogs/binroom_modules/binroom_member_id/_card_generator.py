@@ -1,5 +1,9 @@
 import io
 
+#import qrcode (baris 33)
+#from PIL import Image, ImageDraw, ImageFont (baris 34)
+#from PIL import Image, ImageDraw (baris 14)
+
 BULAN_BHS_INDO = {
     1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
     5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",

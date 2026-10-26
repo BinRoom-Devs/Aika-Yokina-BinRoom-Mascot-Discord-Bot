@@ -6,8 +6,11 @@ from functools import lru_cache
 
 import aiohttp
 import discord
+
+#import resvg_py (baris 22)
 from discord.ext import commands
 
+#from PIL import Image, ImageSequence (baris 39)
 from config import pengaturan
 
 DEFAULT_COLOR = pengaturan.warna_aika

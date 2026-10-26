@@ -8,7 +8,7 @@ from config import pengaturan
 class ChannelInfo(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
+    
     @commands.hybrid_command(
         name="channelinfo",
         description="Menampilkan informasi lengkap tentang channel ini atau channel yang dipilih.",

@@ -10,6 +10,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 
+#from PIL import Image (baris 81)
 from config import pengaturan
 
 log = logging.getLogger(__name__)

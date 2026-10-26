@@ -5,6 +5,19 @@ Perubahan pada bot akan dicatat di file ini.
 Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [pemversian semantik (*Semantic Versioning*)](https//semver.org/spec/v2.0.0.html).
 
 
+## v3.4.0 - 26 Okt 2026
+### Penambahan
+- Command baru! `/menfess` buat ngirim pesan (atau confess-an) anonim.
+
+### Perubahan
+- (Dalam kodingan) karena penerapan semi `lazy import` (alias masih mementingkan backwards compatibility, alias blok `import`-nya tidak ditaruh di atas file melainkan di dalam blok eksekusi), ditambahkan penanda/comment di bagian atas file sekaligus keterangan di baris keberapa `import`-nya.
+
+- (Dalam kodingan) peng-handle `command_not_found` yang ngasih saran "mungkin maksudmu" sekarang dipindah ke `bot.py`.
+
+### Perbaikan
+- Bugfix pada fitur chatbot AI supaya token gak bocor ke ribuan kalo abis pake mode penalaran.
+
+
 ## v3.3.1 - 18 Okt 2026
 ### Perubahan
 - Semua metode pengiriman pesan (alias tanggapan atas command user) diubah dari `send` biasa jadi `reply`.
