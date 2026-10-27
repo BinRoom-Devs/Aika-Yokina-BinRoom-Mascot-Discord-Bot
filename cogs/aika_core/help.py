@@ -4,7 +4,7 @@ import sys
 from typing import Union, get_args, get_origin
 
 import discord
-from discord import AllowedMentions, SeparatorSpacing
+from discord import AllowedMentions, SeparatorSpacing, app_commands
 from discord.ext import commands
 from discord.ui import Container, LayoutView, Section, Separator, TextDisplay, Thumbnail
 
@@ -66,27 +66,61 @@ class Help(commands.Cog):
         return ""
     
     def isi_help(self) -> str:
-        kategori = collections.defaultdict(list)
+        kategori = collections.defaultdict(set)
         
         for perintah in self.bot.walk_commands():
             if perintah.hidden or not perintah.enabled:
                 continue
             
             module_parts = perintah.callback.__module__.split(".")
-            folder = module_parts[1] if len(module_parts) > 1 and module_parts[0] == "cogs" else "Tidak dikategorikan"
+            folder = (
+                module_parts[1]
+                if len(module_parts) > 1 and module_parts[0] == "cogs"
+                else "Tidak dikategorikan"
+            )
+            nama_kategori = FOLDER_MAP.get(
+                folder, folder.replace("_", " ").title()
+            )
+            kategori[nama_kategori].add(perintah.qualified_name)
+        
+        for app_cmd in self.bot.tree.get_commands():
+            prefix_cmd = self.bot.get_command(app_cmd.name)
+            if prefix_cmd is not None:
+                continue
             
-            nama_kategori = FOLDER_MAP.get(folder, folder.replace("_", " ").title())
+            perms = getattr(app_cmd, "default_member_permissions", None)
+            if perms and perms.administrator:
+                continue
             
-            kategori[nama_kategori].append(perintah.qualified_name)
+            if getattr(app_cmd, "hidden", False):
+                continue
+            
+            callback = getattr(app_cmd, "callback", None)
+            folder = "Tidak dikategorikan"
+            if callback:
+                module_parts = callback.__module__.split(".")
+                if len(module_parts) > 1 and module_parts[0] == "cogs":
+                    folder = module_parts[1]
+            elif hasattr(app_cmd, "binding") and app_cmd.binding:
+                module_parts = app_cmd.binding.__module__.split(".")
+                if len(module_parts) > 1 and module_parts[0] == "cogs":
+                    folder = module_parts[1]
+            
+            nama_kategori = FOLDER_MAP.get(
+                folder, folder.replace("_", " ").title()
+            )
+            kategori[nama_kategori].add(app_cmd.name)
         
         kategori_tersusun = sorted(
             kategori.items(),
-            key=lambda x: INDEKS_URUTAN.get(x[0], len(INDEKS_URUTAN))
+            key=lambda x: INDEKS_URUTAN.get(x[0], len(INDEKS_URUTAN)),
         )
         
         return "\n\n".join(
-            f"**{nama_kategori}:**\n" + " ".join(f"`{cmd}`" for cmd in sorted(cmds))
+            f"**{nama_kategori}:**\n"
+            + " ".join(f"`{cmd}`" for cmd in sorted(cmds))
             for nama_kategori, cmds in kategori_tersusun
+            if cmds
         )
     
     async def format_command_help(self, cmd:commands.Command, ctx:commands.Context) -> Container:
@@ -150,23 +184,76 @@ class Help(commands.Cog):
         
         return container
     
+    async def format_app_command_help(self, app_cmd:app_commands.Command, ctx:commands.Context) -> Container:
+        container = Container(accent_color=pengaturan.warna_aika)
+        emoji_aika = await self.emoji_aika()
+        
+        header = f"## {emoji_aika}  Info slash command `/{app_cmd.name}`"
+        container.add_item(TextDisplay(content=header))
+        container.add_item(Separator(spacing=SeparatorSpacing.small))
+        
+        deskripsi = app_cmd.description or "Tidak ada deskripsi."
+        
+        parameter = []
+        argumen_penggunaan = []
+        
+        for prmtr in getattr(app_cmd, "parameters", []):
+            if prmtr.required:
+                argumen_penggunaan.append(f"<{prmtr.name}>")
+                str_prmtr = f"`<{prmtr.name}>` (Wajib)"
+            else:
+                argumen_penggunaan.append(f"[{prmtr.name}]")
+                str_prmtr = f"`[{prmtr.name}]` (Opsional)"
+            
+            tipe_nama = getattr(prmtr.type, "name", str(prmtr.type).split(".")[-1]).title()
+            str_prmtr += f" - *{tipe_nama}*"
+            if prmtr.description:
+                str_prmtr += f": {prmtr.description}"
+            
+            parameter.append(f"• {str_prmtr}")
+        
+        teks_parameter = "\n".join(parameter) if parameter else "Tidak dibutuhkan."
+        penggunaan = f"`/{app_cmd.name} {' '.join(argumen_penggunaan)}`".strip()
+        
+        isi = (
+            f"**Deskripsi:**\n{deskripsi}\n\n"
+            f"**Penggunaan:**\n{penggunaan}\n\n"
+            f"**Parameter:**\n{teks_parameter}"
+        )
+        
+        container.add_item(TextDisplay(content=isi))
+        container.add_item(Separator(spacing=SeparatorSpacing.small))
+        
+        footer = f"-# Ketik `{ctx.clean_prefix}help` untuk melihat daftar perintah lengkapnya Aika."
+        container.add_item(TextDisplay(content=footer))
+        
+        return container
+    
     @commands.hybrid_command(
         name="help",
         description="Menampilkan semua command Aika atau detail command tertentu."
     )
-    async def help(self, ctx: commands.Context, *, command_name: str | None = None):
+    async def help(self, ctx:commands.Context, *, command_name:str|None=None):
         if command_name:
             cmd = self.bot.get_command(command_name)
-            
-            if not cmd or cmd.hidden:
-                await ctx.reply("❌🤫 Perintah ini tersembunyi / tidak publik.", ephemeral=True)
+            if cmd and not cmd.hidden:
+                container = await self.format_command_help(cmd, ctx)
+                await ctx.reply(
+                    view=LayoutView().add_item(container),
+                    allowed_mentions=AllowedMentions.none()
+                )
                 return
             
-            container = await self.format_command_help(cmd, ctx)
-            await ctx.reply(
-                view=LayoutView().add_item(container),
-                allowed_mentions=AllowedMentions.none()
-            )
+            app_cmd = self.bot.tree.get_command(command_name)
+            if app_cmd:
+                container = await self.format_app_command_help(app_cmd, ctx)
+                await ctx.reply(
+                    view=LayoutView().add_item(container),
+                    allowed_mentions=AllowedMentions.none()
+                )
+                return
+            
+            await ctx.reply("❌🤫 Perintah ini tersembunyi / tidak publik atau tidak ditemukan.", ephemeral=True)
             return
         
         container = Container(accent_color=pengaturan.warna_aika)
@@ -221,5 +308,5 @@ class Help(commands.Cog):
         )
 
 
-async def setup(bot:commands.Bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(Help(bot))

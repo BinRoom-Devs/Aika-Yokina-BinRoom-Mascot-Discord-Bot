@@ -5,6 +5,11 @@ Perubahan pada bot akan dicatat di file ini.
 Changelog ini mengikuti format [Keep a Changelog](https//keepachangelog.com/en/1.1.0/) dan projek ini mengadopsi sistem [pemversian semantik (*Semantic Versioning*)](https//semver.org/spec/v2.0.0.html).
 
 
+## v3.4.1 - 27 Okt 2026
+### Perbaikan
+- Bugfix di command help karena dia sebelumnya gabisa baca command yang pure slash.
+
+
 ## v3.4.0 - 26 Okt 2026
 ### Penambahan
 - Command baru! `/menfess` buat ngirim pesan (atau confess-an) anonim.
